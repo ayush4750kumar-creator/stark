@@ -1,7 +1,7 @@
 // src/pages/LoginPage.jsx
 import { useState, useEffect } from "react";
 
-const API = "http://localhost:5000/api/auth";
+const API = `${process.env.REACT_APP_API_URL}/auth`;
 
 export default function LoginPage({ onLogin }) {
   const [mode, setMode]         = useState("login");
