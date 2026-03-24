@@ -57,7 +57,7 @@ router.get("/trending", (req, res) => {
       SELECT s.*, COUNT(a.id) as news_count
       FROM stocks s
       LEFT JOIN articles a ON s.symbol = a.symbol
-        AND a.published_at > NOW() - INTERVAL '-24 hours'
+        AND a.published_at::timestamp > NOW() - INTERVAL '24 hours'
       WHERE s.price IS NOT NULL
       GROUP BY s.symbol
       ORDER BY news_count DESC, ABS(COALESCE(s.change_pct,0)) DESC
@@ -251,7 +251,7 @@ router.get("/:symbol/news", (req, res) => {
       SELECT id, headline, summary_20, summary_long, sentiment, source, source_url, image_url, published_at, full_text
       FROM articles
       WHERE symbol = ?
-        AND published_at >= NOW() - INTERVAL '-15 days'
+        AND published_at::timestamp >= NOW() - INTERVAL '15 days'
         AND headline IS NOT NULL AND length(headline) > 10
       GROUP BY headline
       ORDER BY published_at DESC LIMIT ?
