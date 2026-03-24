@@ -21,6 +21,8 @@ app.use(cors({
     "https://stark-three-rouge.vercel.app",
   ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true }));
 
