@@ -1,5 +1,5 @@
 [phases.build]
-cmds = ["npm install"]
+cmds = ["cd stockpulse-backend && npm install"]
 
 [phases.start]
-cmd = "node server.js"
+cmd = "cd stockpulse-backend && node server.js"
