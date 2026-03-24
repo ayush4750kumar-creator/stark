@@ -18,6 +18,7 @@ app.use(cors({
     process.env.FRONTEND_URL || "http://localhost:3000",
     "http://localhost:3000",
     "http://localhost:3001",
+    "https://stark-three-rouge.vercel.app",
   ],
   credentials: true,
 }));
