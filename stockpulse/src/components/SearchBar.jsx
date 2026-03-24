@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 
 const POPULAR = [
   { symbol: "RELIANCE",   name: "Reliance Industries",       exchange: "NSE",    sector: "Energy" },

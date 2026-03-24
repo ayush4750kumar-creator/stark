@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import InlineCompanyView from "../components/InlineCompanyView";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 
 const CATEGORY_FILTERS = [
   { id:"all",        label:"All"          },

@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 
 // ── Special non-company symbols: instant colored badges ───────────
 const SPECIAL_ICONS = {

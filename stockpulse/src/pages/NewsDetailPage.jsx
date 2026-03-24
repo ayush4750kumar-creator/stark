@@ -4,7 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import StockChart from "../components/StockChart";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 
 const JUNK_LINES = [
   "follow us on", "follow seeking alpha", "latest stock news",

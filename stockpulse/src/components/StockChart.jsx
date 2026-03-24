@@ -1,7 +1,7 @@
 // src/components/StockChart.jsx
 import { useState, useEffect, useRef } from "react";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 const PERIODS = ["1D", "1W", "1M", "1Y", "3Y"];
 const TO_API  = { "1D":"1d", "1W":"1w", "1M":"1m", "1Y":"1y", "3Y":"3y" };
 

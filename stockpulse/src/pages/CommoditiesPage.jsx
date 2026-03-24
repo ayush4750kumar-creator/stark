@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 
 const ICONS = {
   "Gold": "🥇", "Silver": "🥈", "Crude Oil": "🛢", "Brent Crude": "⛽",

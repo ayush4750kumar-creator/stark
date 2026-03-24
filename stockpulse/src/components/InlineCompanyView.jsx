@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import StockChart from "./StockChart";
 
-const BACKEND = "${process.env.REACT_APP_API_URL}";
+const BACKEND = process.env.REACT_APP_API_URL;
 const TABS    = ["PERFORMANCE", "STATS GRAPHS", "ALL NEWS"];
 
 const DOMAIN_MAP = {
