@@ -14,15 +14,20 @@ app.use(helmet({ crossOriginEmbedderPolicy: false }));
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || "http://localhost:3000",
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://stark-three-rouge.vercel.app",
-  ],
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (
+      origin.endsWith('.vercel.app') ||
+      origin === 'http://localhost:3000' ||
+      origin === 'http://localhost:3001'
+    ) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use("/api/", rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true }));
 
