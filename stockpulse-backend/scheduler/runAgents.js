@@ -78,7 +78,7 @@ function startScheduler() {
     try {
       const { getDB } = require("../config/database");
       const result = getDB().prepare(
-        "DELETE FROM articles WHERE published_at < datetime('now', '-30 days')"
+        "DELETE FROM articles WHERE published_at < NOW() - INTERVAL '-30 days'"
       ).run();
       console.log(`\n🗑  Cleanup: deleted ${result.changes} articles older than 30 days`);
     } catch (e) {

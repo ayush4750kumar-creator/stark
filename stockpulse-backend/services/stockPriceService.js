@@ -174,14 +174,14 @@ function saveStockData(data) {
       pe_ratio, pb_ratio, eps, div_yield,
       roe, debt_equity, book_value, face_value,
       updated_at
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
     ON CONFLICT(symbol) DO UPDATE SET
       price=excluded.price, change_amt=excluded.change_amt,
       change_pct=excluded.change_pct, day_open=excluded.day_open,
       day_high=excluded.day_high, day_low=excluded.day_low,
       volume=excluded.volume, market_cap=excluded.market_cap,
       week52_low=excluded.week52_low, week52_high=excluded.week52_high,
-      updated_at=datetime('now')
+      updated_at=NOW()
   `).run([
     data.symbol, data.name, data.sector,
     data.price, data.change_amt, data.change_pct,
