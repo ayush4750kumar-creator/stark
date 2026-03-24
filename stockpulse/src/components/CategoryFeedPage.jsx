@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef } from "react";
 import CompanyLogo from "./CompanyLogo";  // same dir: src/components/
 
-const BACKEND = "http://localhost:5000/api";
+const BACKEND = "${process.env.REACT_APP_API_URL}";
 
 const CATEGORY_LABELS = {
   trending:"Trending Today", gainers:"Top Gainers", losers:"Top Losers",

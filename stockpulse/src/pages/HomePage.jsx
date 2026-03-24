@@ -7,7 +7,7 @@ import { STOCKS } from "../data/mockData";
 import { getNewsForStock } from "../services/newsService";
 
 const PAGE_SIZE = 10;
-const BACKEND   = "http://localhost:5000/api";
+const BACKEND   = "${process.env.REACT_APP_API_URL}";
 
 function relativeTime(iso) {
   if (!iso) return "";

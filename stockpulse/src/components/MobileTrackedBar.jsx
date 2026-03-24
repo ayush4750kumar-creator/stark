@@ -13,7 +13,7 @@ export default function MobileTrackedBar({ trackedStocks, activeFilter, setActiv
     if (!q) { setResults([]); return; }
     timerRef.current = setTimeout(async () => {
       try {
-        const res  = await fetch(`http://localhost:5000/api/stocks/search?q=${encodeURIComponent(q)}`);
+        const res  = await fetch(`${process.env.REACT_APP_API_URL}/stocks/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         setResults(data.data || []);
       } catch { setResults([]); }

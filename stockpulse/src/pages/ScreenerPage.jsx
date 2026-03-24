@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import IntradayScreenerPage from "./IntradayScreenerPage";
 
-const BACKEND = "http://localhost:5000/api";
+const BACKEND = "${process.env.REACT_APP_API_URL}";
 
 const CONFIG = {
   intraday: {

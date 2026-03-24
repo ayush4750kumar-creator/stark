@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import CompanyLogo from "../components/CompanyLogo";
 import InlineCompanyView from "../components/InlineCompanyView";
 
-const BACKEND = "http://localhost:5000/api";
+const BACKEND = "${process.env.REACT_APP_API_URL}";
 
 const FILTER_GROUPS = [
   {
@@ -195,7 +195,7 @@ export default function IntradayScreenerPage() {
     if (local.length) { setSearchRes(local); setSearchOpen(true); }
     searchTimer.current = setTimeout(async () => {
       try {
-        const r = await fetch(`http://localhost:5000/api/stocks/search?q=${encodeURIComponent(q)}`);
+        const r = await fetch(`${process.env.REACT_APP_API_URL}/stocks/search?q=${encodeURIComponent(q)}`);
         const d = await r.json();
         if (d.success && d.data?.length) {
           const results = d.data.filter(s=>s.symbol?.endsWith(".NS")||s.symbol?.endsWith(".BO")).slice(0,8)

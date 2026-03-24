@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import CompanyLogo from "../components/CompanyLogo";
 import InlineCompanyView from "../components/InlineCompanyView";
 
-const BACKEND = "http://localhost:5000/api";
+const BACKEND = "${process.env.REACT_APP_API_URL}";
 
 function relTime(iso) {
   if (!iso) return "";
