@@ -119,7 +119,7 @@ async function fetchGNews(symbol, name) {
   }));
 }
 
-const BACKEND = "http://localhost:5000/api";
+const BACKEND = "${process.env.REACT_APP_API_URL}";
 
 // ── Try fetching processed news from our backend DB ───────────
 async function fetchFromBackend(symbol) {
