@@ -18,7 +18,7 @@ import MutualFundsPage   from "./pages/MutualFundsPage";
 import MorePage          from "./pages/MorePage";
 import LoginPage         from "./pages/LoginPage";
 
-const BACKEND       = "${process.env.REACT_APP_API_URL}";
+const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
 // Default symbols to track on first load
