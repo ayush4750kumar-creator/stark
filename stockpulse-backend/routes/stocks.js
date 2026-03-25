@@ -59,7 +59,7 @@ router.get("/trending", (req, res) => {
       LEFT JOIN articles a ON s.symbol = a.symbol
         AND a.published_at::timestamp > NOW() - INTERVAL '24 hours'
       WHERE s.price IS NOT NULL
-      GROUP BY s.symbol
+      GROUP BY s.symbol, s.name, s.sector, s.price, s.change_amt, s.change_pct, s.market_cap, s.pe_ratio, s.pb_ratio, s.eps, s.roe, s.debt_equity, s.face_value, s.book_value, s.div_yield, s.ind_pe, s.week52_low, s.week52_high, s.day_open, s.day_high, s.day_low, s.volume, s.updated_at, s.yahoo_symbol, s.fund_unavailable
       ORDER BY news_count DESC, ABS(COALESCE(s.change_pct,0)) DESC
       LIMIT 8
     `).all();
