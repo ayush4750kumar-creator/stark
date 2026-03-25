@@ -1,14 +1,16 @@
 // config/database.js
-const { Pool } = require("pg");
+const { DatabaseSync } = require("node:sqlite");
+const path = require("path");
+const fs   = require("fs");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-});
+const DB_PATH = path.resolve(process.env.DB_PATH || "./database/stockpulse.db");
+if (!fs.existsSync(path.dirname(DB_PATH))) {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+}
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS articles (
-    id           SERIAL PRIMARY KEY,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
     uuid         TEXT UNIQUE,
     symbol       TEXT,
     company      TEXT,
@@ -22,7 +24,7 @@ const SCHEMA = `
     published_at TEXT,
     sentiment    TEXT,
     sentiment_score REAL,
-    fetched_at   TEXT DEFAULT (now()::text),
+    fetched_at   TEXT DEFAULT (datetime('now')),
     processed    INTEGER DEFAULT 0,
     agent_source TEXT
   );
@@ -34,37 +36,24 @@ const SCHEMA = `
     face_value REAL, book_value REAL, div_yield REAL,
     ind_pe REAL, week52_low REAL, week52_high REAL,
     day_open REAL, day_high REAL, day_low REAL,
-    volume INTEGER, updated_at TEXT DEFAULT (now()::text),
-    fund_unavailable INTEGER DEFAULT 0
+    volume INTEGER, updated_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS price_history (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     symbol TEXT NOT NULL, price REAL NOT NULL,
-    volume INTEGER, timestamp TEXT DEFAULT (now()::text)
+    volume INTEGER, timestamp TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, created_at TEXT DEFAULT (now()::text)
+    password TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS watchlists (
     user_id INTEGER NOT NULL,
     symbol  TEXT NOT NULL,
-    added_at TEXT DEFAULT (now()::text),
+    added_at TEXT DEFAULT (datetime('now')),
     PRIMARY KEY (user_id, symbol),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-  CREATE TABLE IF NOT EXISTS financials (
-    id          SERIAL PRIMARY KEY,
-    symbol      TEXT NOT NULL,
-    period_type TEXT NOT NULL,
-    period      TEXT NOT NULL,
-    revenue     REAL, net_income REAL, gross_profit REAL,
-    ebit        REAL, eps REAL, total_assets REAL,
-    total_debt  REAL, equity REAL, op_cashflow REAL,
-    capex       REAL, free_cashflow REAL, currency TEXT, source TEXT,
-    fetched_at  TEXT DEFAULT (now()::text),
-    UNIQUE(symbol, period_type, period)
   );
   CREATE INDEX IF NOT EXISTS idx_art_sym  ON articles(symbol);
   CREATE INDEX IF NOT EXISTS idx_art_proc ON articles(processed);
@@ -73,59 +62,72 @@ const SCHEMA = `
 
 let _db = null;
 
-async function initDB() {
+function initDB() {
   if (_db) return _db;
-  await pool.query(SCHEMA);
-  console.log("✅ PostgreSQL Database ready");
+  const raw = new DatabaseSync(DB_PATH);
+  raw.exec("PRAGMA journal_mode=WAL;");
+  raw.exec("PRAGMA synchronous=NORMAL;");
+  raw.exec(SCHEMA);
 
   _db = {
     prepare(sql) {
-      // Convert SQLite ? placeholders to PostgreSQL $1, $2...
-      let i = 0;
-      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
       return {
-        async run(...args) {
+        run(...args) {
           const params = args.length === 1 && Array.isArray(args[0]) ? args[0]
-                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0])
-                         ? Object.values(args[0])
+                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) ? args[0]
                        : args;
           try {
-            const result = await pool.query(pgSql, params);
-            return { changes: result.rowCount, lastInsertRowid: result.rows[0]?.id };
+            const stmt = raw.prepare(sql);
+            return stmt.run(...(Array.isArray(params) ? params : [params]));
           } catch(e) {
-            if (e.message?.includes("unique") || e.message?.includes("UNIQUE")) return { changes: 0, lastInsertRowid: 0 };
+            if (e.message?.includes("UNIQUE")) return { changes: 0, lastInsertRowid: 0 };
             throw e;
           }
         },
-        async get(...args) {
+        get(...args) {
           const params = args.length === 1 && Array.isArray(args[0]) ? args[0]
-                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0])
-                         ? Object.values(args[0])
+                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) ? args[0]
                        : args;
-          const result = await pool.query(pgSql, params);
-          return result.rows[0] || null;
+          const stmt = raw.prepare(sql);
+          return stmt.get(...(Array.isArray(params) ? params : [params])) || null;
         },
-        async all(...args) {
+        all(...args) {
           const params = args.length === 1 && Array.isArray(args[0]) ? args[0]
-                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0])
-                         ? Object.values(args[0])
+                       : args.length === 1 && typeof args[0] === "object" && args[0] !== null && !Array.isArray(args[0]) ? args[0]
                        : args;
-          const result = await pool.query(pgSql, params);
-          return result.rows || [];
+          const stmt = raw.prepare(sql);
+          return stmt.all(...(Array.isArray(params) ? params : [params])) || [];
         },
       };
     },
-    async exec(sql) { await pool.query(sql); },
-    pragma()  {}, // no-op for PostgreSQL
+    exec(sql) { raw.exec(sql); },
+    pragma(s)  { raw.exec(`PRAGMA ${s}`); },
   };
 
+  try { raw.exec("ALTER TABLE articles ADD COLUMN summary_long TEXT"); } catch {}
+  try { raw.exec("ALTER TABLE stocks ADD COLUMN yahoo_symbol TEXT"); } catch {}
+  try { raw.exec("ALTER TABLE stocks ADD COLUMN fund_unavailable INTEGER DEFAULT 0"); } catch {}
+  raw.exec(`CREATE TABLE IF NOT EXISTS financials (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol      TEXT NOT NULL,
+    period_type TEXT NOT NULL,
+    period      TEXT NOT NULL,
+    revenue     REAL, net_income REAL, gross_profit REAL,
+    ebit        REAL, eps REAL, total_assets REAL,
+    total_debt  REAL, equity REAL, op_cashflow REAL,
+    capex       REAL, free_cashflow REAL,
+    fetched_at  TEXT DEFAULT (datetime('now')),
+    UNIQUE(symbol, period_type, period)
+  )`);
+  try { raw.exec("ALTER TABLE financials ADD COLUMN currency TEXT"); } catch {}
+  try { raw.exec("ALTER TABLE financials ADD COLUMN source TEXT"); } catch {}
+  console.log("✅ Database ready at:", DB_PATH);
   return _db;
 }
 
-const dbReady = initDB();
-
+const dbReady = Promise.resolve(initDB());
 function getDB() {
-  if (!_db) throw new Error("DB not ready yet — await dbReady first");
+  if (!_db) initDB();
   return _db;
 }
 
