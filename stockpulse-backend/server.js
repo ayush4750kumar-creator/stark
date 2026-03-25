@@ -77,7 +77,8 @@ dbReady.then(() => {
     res.status(500).json({ success: false, error: "Internal server error" });
   });
 
-  app.listen(PORT, () => {
+  app.get("/", (req, res) => { res.json({ success: true, message: "Gramble API is running!" }); });
+app.listen(PORT, () => {
     console.log("\n" + "═".repeat(50));
     console.log("  Gramble Backend running!");
     console.log(`   API:      http://localhost:${PORT}/api`);
