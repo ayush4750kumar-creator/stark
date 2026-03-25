@@ -211,7 +211,7 @@ async function runBatch(limit = 50) {
       AND source_url IS NOT NULL
       AND source_url != ''
       AND (sentiment IS NULL OR sentiment = '' OR sentiment = 'neutral')
-      AND published_at > datetime('now', '-30 days')
+      AND published_at::timestamp > NOW() - INTERVAL '30 days'
     ORDER BY published_at DESC
     LIMIT ?
   `).all(limit);
@@ -276,7 +276,7 @@ async function analyzeSymbol(symbol) {
     SELECT id, symbol, headline, summary_20, full_text, source_url, sentiment
     FROM articles
     WHERE symbol = ?
-      AND published_at > datetime('now', '-30 days')
+      AND published_at::timestamp > NOW() - INTERVAL '30 days'
     ORDER BY published_at DESC
     LIMIT 100
   `).all(symbol);
