@@ -4,7 +4,7 @@ const { quickSentiment } = require('./services/sentimentService');
 const db = getDB();
 
 const arts = db.prepare(
-  "SELECT id, symbol, headline, summary_20 FROM articles WHERE symbol != 'MARKET' AND (sentiment IS NULL OR sentiment = 'neutral') AND published_at::timestamp > NOW() - INTERVAL '30 days'"
+  "SELECT id, symbol, headline, summary_20 FROM articles WHERE symbol != 'MARKET' AND (sentiment IS NULL OR sentiment = 'neutral') AND published_at > datetime('now', '-30 days')"
 ).all();
 
 console.log('Re-scoring', arts.length, 'neutral articles...');
