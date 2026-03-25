@@ -47,7 +47,7 @@ async function fetchJSON(url) {
 
 function insertStocks(stocks) {
   const stmt = db.prepare(`
-    INSERT OR IGNORE INTO stocks (symbol, name, sector, yahoo_symbol)
+    INSERT INTO stocks (symbol, name, sector, yahoo_symbol)
     VALUES (?, ?, ?, ?)
   `);
   let count = 0;

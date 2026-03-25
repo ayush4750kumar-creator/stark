@@ -45,10 +45,12 @@ function detectStock(text) {
 function saveArticle(article) {
   try {
     const info = db().prepare(`
-      INSERT OR IGNORE INTO articles
+      INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES
         (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB')
+    
+      ON CONFLICT (uuid) DO NOTHING
     `).run(article);
     return info.changes > 0;
   } catch (err) {

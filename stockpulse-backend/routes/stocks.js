@@ -118,7 +118,7 @@ router.get("/search", async (req, res) => {
     const quotes = (j.quotes || []).filter(x => x.quoteType === "EQUITY" || x.quoteType === "ETF");
 
     if (quotes.length) {
-      const insertStmt = db().prepare("INSERT OR IGNORE INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?)");
+      const insertStmt = db().prepare("INSERT INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?) ON CONFLICT (symbol) DO NOTHING");
       for (const q of quotes.slice(0, 10)) {
         const sym = (q.symbol || "").replace(/\.(NS|BO)$/, "");
         insertStmt.run(sym, q.longname || q.shortname || sym, q.sector || q.industry || "Stock", q.symbol);
@@ -202,7 +202,7 @@ router.get("/:symbol", async (req, res) => {
 
     const fund = await getFundamentals(symbol);
     if (fund?.price) {
-      db().prepare(`INSERT OR IGNORE INTO stocks (symbol, name, sector) VALUES (?,?,?)`)
+      db().prepare(`INSERT INTO stocks (symbol, name, sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`)
         .run(symbol, fund.name || symbol, "Stock");
       db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?,
         day_open=?, day_high=?, day_low=?, volume=?, week52_high=?, week52_low=?,
@@ -306,7 +306,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
     if (!hasFund) {
       console.log(`  ⚠ Price-only for ${symbol}`);
       try {
-        db().prepare(`INSERT OR IGNORE INTO stocks (symbol,name,sector) VALUES (?,?,?)`).run(symbol, fund.name||symbol, "Stock");
+        db().prepare(`INSERT INTO stocks (symbol,name,sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`).run(symbol, fund.name||symbol, "Stock");
         db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?, day_open=?, day_high=?, day_low=?,
           volume=?, week52_high=?, week52_low=?, market_cap=COALESCE(?,market_cap),
           fund_unavailable=1, updated_at=NOW() WHERE symbol=?`)
@@ -321,7 +321,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
 
     console.log(`  ✓ Got fundamentals for ${symbol} [${fund._source}] P/E=${fund.pe_ratio} EPS=${fund.eps}`);
 
-    db().prepare(`INSERT OR IGNORE INTO stocks (symbol, name, sector) VALUES (?,?,?)`)
+    db().prepare(`INSERT INTO stocks (symbol, name, sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`)
       .run(symbol, fund.name || symbol, "Stock");
 
     const nv = v => (v === undefined ? null : v ?? null);
