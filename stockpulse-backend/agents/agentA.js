@@ -43,11 +43,10 @@ function isJunk(headline) {
 function saveArticle(article) {
   try {
     const info = db().prepare(`
-      INSERT INTO articles
+      INSERT OR IGNORE INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES
         (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentA')
-      ON CONFLICT (uuid) DO NOTHING
     `).run(article);
     return info.changes > 0;
   } catch (err) { console.error("AgentA DB error:", err.message); return false; }

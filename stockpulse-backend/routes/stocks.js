@@ -57,9 +57,9 @@ router.get("/trending", (req, res) => {
       SELECT s.*, COUNT(a.id) as news_count
       FROM stocks s
       LEFT JOIN articles a ON s.symbol = a.symbol
-        AND a.published_at::timestamp > NOW() - INTERVAL '24 hours'
+        AND a.published_at > datetime('now', '-24 hours')
       WHERE s.price IS NOT NULL
-      GROUP BY s.symbol, s.name, s.sector, s.price, s.change_amt, s.change_pct, s.market_cap, s.pe_ratio, s.pb_ratio, s.eps, s.roe, s.debt_equity, s.face_value, s.book_value, s.div_yield, s.ind_pe, s.week52_low, s.week52_high, s.day_open, s.day_high, s.day_low, s.volume, s.updated_at, s.yahoo_symbol, s.fund_unavailable
+      GROUP BY s.symbol
       ORDER BY news_count DESC, ABS(COALESCE(s.change_pct,0)) DESC
       LIMIT 8
     `).all();
@@ -118,7 +118,7 @@ router.get("/search", async (req, res) => {
     const quotes = (j.quotes || []).filter(x => x.quoteType === "EQUITY" || x.quoteType === "ETF");
 
     if (quotes.length) {
-      const insertStmt = db().prepare("INSERT INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?) ON CONFLICT (symbol) DO NOTHING");
+      const insertStmt = db().prepare("INSERT OR IGNORE INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?)");
       for (const q of quotes.slice(0, 10)) {
         const sym = (q.symbol || "").replace(/\.(NS|BO)$/, "");
         insertStmt.run(sym, q.longname || q.shortname || sym, q.sector || q.industry || "Stock", q.symbol);
@@ -184,11 +184,11 @@ router.get("/:symbol", async (req, res) => {
         db().prepare(`
           INSERT INTO stocks (symbol, name, sector, price, change_amt, change_pct,
             day_open, day_high, day_low, volume, market_cap, week52_low, week52_high, updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
           ON CONFLICT(symbol) DO UPDATE SET
             price=excluded.price, change_amt=excluded.change_amt, change_pct=excluded.change_pct,
             day_open=excluded.day_open, day_high=excluded.day_high, day_low=excluded.day_low,
-            volume=excluded.volume, updated_at=NOW()
+            volume=excluded.volume, updated_at=datetime('now')
         `).run([symbol, config?.name||symbol, config?.sector||"Stock",
           live.price, live.change_amt, live.change_pct,
           live.day_open, live.day_high, live.day_low, live.volume,
@@ -202,7 +202,7 @@ router.get("/:symbol", async (req, res) => {
 
     const fund = await getFundamentals(symbol);
     if (fund?.price) {
-      db().prepare(`INSERT INTO stocks (symbol, name, sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`)
+      db().prepare(`INSERT OR IGNORE INTO stocks (symbol, name, sector) VALUES (?,?,?)`)
         .run(symbol, fund.name || symbol, "Stock");
       db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?,
         day_open=?, day_high=?, day_low=?, volume=?, week52_high=?, week52_low=?,
@@ -210,7 +210,7 @@ router.get("/:symbol", async (req, res) => {
         pb_ratio=COALESCE(?,pb_ratio), eps=COALESCE(?,eps),
         div_yield=COALESCE(?,div_yield), roe=COALESCE(?,roe),
         debt_equity=COALESCE(?,debt_equity), book_value=COALESCE(?,book_value),
-        yahoo_symbol=?, name=COALESCE(?,name), updated_at=NOW()
+        yahoo_symbol=?, name=COALESCE(?,name), updated_at=datetime('now')
         WHERE symbol=?`)
         .run(fund.price, fund.change_amt, fund.change_pct,
           fund.day_open, fund.day_high, fund.day_low, fund.volume,
@@ -251,7 +251,7 @@ router.get("/:symbol/news", (req, res) => {
       SELECT id, headline, summary_20, summary_long, sentiment, source, source_url, image_url, published_at, full_text
       FROM articles
       WHERE symbol = ?
-        AND published_at::timestamp >= NOW() - INTERVAL '15 days'
+        AND published_at >= datetime('now', '-15 days')
         AND headline IS NOT NULL AND length(headline) > 10
       GROUP BY headline
       ORDER BY published_at DESC LIMIT ?
@@ -277,7 +277,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
           const nv = v => (v === undefined ? null : v ?? null);
           db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?,
             day_open=?, day_high=?, day_low=?, volume=?, week52_high=?, week52_low=?,
-            market_cap=COALESCE(?,market_cap), updated_at=NOW() WHERE symbol=?`)
+            market_cap=COALESCE(?,market_cap), updated_at=datetime('now') WHERE symbol=?`)
             .run(nv(fund.price), nv(fund.change_amt), nv(fund.change_pct),
               nv(fund.day_open), nv(fund.day_high), nv(fund.day_low), nv(fund.volume),
               nv(fund.week52_high), nv(fund.week52_low), nv(fund.market_cap), symbol);
@@ -306,10 +306,10 @@ router.get("/:symbol/fundamentals", async (req, res) => {
     if (!hasFund) {
       console.log(`  ⚠ Price-only for ${symbol}`);
       try {
-        db().prepare(`INSERT INTO stocks (symbol,name,sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`).run(symbol, fund.name||symbol, "Stock");
+        db().prepare(`INSERT OR IGNORE INTO stocks (symbol,name,sector) VALUES (?,?,?)`).run(symbol, fund.name||symbol, "Stock");
         db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?, day_open=?, day_high=?, day_low=?,
           volume=?, week52_high=?, week52_low=?, market_cap=COALESCE(?,market_cap),
-          fund_unavailable=1, updated_at=NOW() WHERE symbol=?`)
+          fund_unavailable=1, updated_at=datetime('now') WHERE symbol=?`)
           .run(fund.price??null, fund.change_amt??null, fund.change_pct??null,
                fund.day_open??null, fund.day_high??null, fund.day_low??null,
                fund.volume??null, fund.week52_high??null, fund.week52_low??null,
@@ -321,7 +321,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
 
     console.log(`  ✓ Got fundamentals for ${symbol} [${fund._source}] P/E=${fund.pe_ratio} EPS=${fund.eps}`);
 
-    db().prepare(`INSERT INTO stocks (symbol, name, sector) VALUES (?,?,?) ON CONFLICT (symbol) DO NOTHING`)
+    db().prepare(`INSERT OR IGNORE INTO stocks (symbol, name, sector) VALUES (?,?,?)`)
       .run(symbol, fund.name || symbol, "Stock");
 
     const nv = v => (v === undefined ? null : v ?? null);
@@ -346,7 +346,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
         debt_equity = COALESCE(?, debt_equity),
         book_value  = COALESCE(?, book_value),
         fund_unavailable = 0,
-        updated_at  = NOW()
+        updated_at  = datetime('now')
         WHERE symbol = ?`)
         .run(
           nv(fund.name),

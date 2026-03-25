@@ -155,7 +155,7 @@ function ensureTable() {
       CREATE TABLE IF NOT EXISTS logo_cache (
         symbol   TEXT PRIMARY KEY,
         data_url TEXT,
-        fetched  INTEGER DEFAULT (EXTRACT(EPOCH FROM NOW())::INTEGER)
+        fetched  INTEGER DEFAULT (strftime('%s','now'))
       )
     `);
   } catch {}
@@ -174,7 +174,7 @@ function saveToDB(symbol, dataUrl) {
   try {
     getDB().prepare(`
       INSERT INTO logo_cache(symbol, data_url) VALUES(?,?)
-      ON CONFLICT(symbol) DO UPDATE SET data_url=excluded.data_url, fetched=EXTRACT(EPOCH FROM NOW())::INTEGER
+      ON CONFLICT(symbol) DO UPDATE SET data_url=excluded.data_url, fetched=strftime('%s','now')
     `).run(symbol, dataUrl || null);
   } catch {}
 }

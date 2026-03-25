@@ -35,11 +35,9 @@ const rss = new RSSParser({
 function saveArticle(a) {
   try {
     db().prepare(`
-      INSERT INTO articles
+      INSERT OR IGNORE INTO articles
         (uuid,symbol,company,headline,full_text,source,source_url,image_url,published_at,agent_source)
       VALUES(@uuid,@symbol,@company,@headline,@full_text,@source,@source_url,@image_url,@published_at,@agent_source)
-    
-      ON CONFLICT (uuid) DO NOTHING
     `).run(a);
     return true;
   } catch(e) { return false; }
