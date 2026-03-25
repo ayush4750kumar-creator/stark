@@ -71,14 +71,14 @@ dbReady.then(() => {
     runPricePipeline();
   });
 
+  app.get("/", (req, res) => { res.json({ success: true, message: "Gramble API is running!" }); });
   app.use((req, res) => res.status(404).json({ success: false, error: `Route ${req.path} not found` }));
   app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ success: false, error: "Internal server error" });
   });
 
-  app.get("/", (req, res) => { res.json({ success: true, message: "Gramble API is running!" }); });
-app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log("\n" + "═".repeat(50));
     console.log("  Gramble Backend running!");
     console.log(`   API:      http://localhost:${PORT}/api`);
