@@ -184,11 +184,11 @@ router.get("/:symbol", async (req, res) => {
         db().prepare(`
           INSERT INTO stocks (symbol, name, sector, price, change_amt, change_pct,
             day_open, day_high, day_low, volume, market_cap, week52_low, week52_high, updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now'))
           ON CONFLICT(symbol) DO UPDATE SET
             price=excluded.price, change_amt=excluded.change_amt, change_pct=excluded.change_pct,
             day_open=excluded.day_open, day_high=excluded.day_high, day_low=excluded.day_low,
-            volume=excluded.volume, updated_at=NOW()
+            volume=excluded.volume, updated_at=datetime('now')
         `).run([symbol, config?.name||symbol, config?.sector||"Stock",
           live.price, live.change_amt, live.change_pct,
           live.day_open, live.day_high, live.day_low, live.volume,
@@ -210,7 +210,7 @@ router.get("/:symbol", async (req, res) => {
         pb_ratio=COALESCE(?,pb_ratio), eps=COALESCE(?,eps),
         div_yield=COALESCE(?,div_yield), roe=COALESCE(?,roe),
         debt_equity=COALESCE(?,debt_equity), book_value=COALESCE(?,book_value),
-        yahoo_symbol=?, name=COALESCE(?,name), updated_at=NOW()
+        yahoo_symbol=?, name=COALESCE(?,name), updated_at=datetime('now')
         WHERE symbol=?`)
         .run(fund.price, fund.change_amt, fund.change_pct,
           fund.day_open, fund.day_high, fund.day_low, fund.volume,
@@ -277,7 +277,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
           const nv = v => (v === undefined ? null : v ?? null);
           db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?,
             day_open=?, day_high=?, day_low=?, volume=?, week52_high=?, week52_low=?,
-            market_cap=COALESCE(?,market_cap), updated_at=NOW() WHERE symbol=?`)
+            market_cap=COALESCE(?,market_cap), updated_at=datetime('now') WHERE symbol=?`)
             .run(nv(fund.price), nv(fund.change_amt), nv(fund.change_pct),
               nv(fund.day_open), nv(fund.day_high), nv(fund.day_low), nv(fund.volume),
               nv(fund.week52_high), nv(fund.week52_low), nv(fund.market_cap), symbol);
@@ -309,7 +309,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
         db().prepare(`INSERT INTO stocks (symbol,name,sector) VALUES (?,?,?)`).run(symbol, fund.name||symbol, "Stock");
         db().prepare(`UPDATE stocks SET price=?, change_amt=?, change_pct=?, day_open=?, day_high=?, day_low=?,
           volume=?, week52_high=?, week52_low=?, market_cap=COALESCE(?,market_cap),
-          fund_unavailable=1, updated_at=NOW() WHERE symbol=?`)
+          fund_unavailable=1, updated_at=datetime('now') WHERE symbol=?`)
           .run(fund.price??null, fund.change_amt??null, fund.change_pct??null,
                fund.day_open??null, fund.day_high??null, fund.day_low??null,
                fund.volume??null, fund.week52_high??null, fund.week52_low??null,
@@ -346,7 +346,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
         debt_equity = COALESCE(?, debt_equity),
         book_value  = COALESCE(?, book_value),
         fund_unavailable = 0,
-        updated_at  = NOW()
+        updated_at  = datetime('now')
         WHERE symbol = ?`)
         .run(
           nv(fund.name),

@@ -45,7 +45,7 @@ function saveRows(symbol, rows, currency, source) {
           equity=excluded.equity,op_cashflow=excluded.op_cashflow,
           capex=excluded.capex,free_cashflow=excluded.free_cashflow,
           currency=excluded.currency,source=excluded.source,
-          fetched_at=NOW()
+          fetched_at=datetime('now')
       `).run(
         symbol,r.period_type,r.period,
         r.revenue??null,r.net_income??null,r.gross_profit??null,
