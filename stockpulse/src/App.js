@@ -189,8 +189,8 @@ function AuthModal({ onLogin, onClose }) {
           <div style={{ textAlign: "center" }}>
             <div style={{
               fontFamily: "'Outfit', sans-serif",
-              fontWeight: 900, fontSize: 22,
-              letterSpacing: "-0.04em", color: "#111", lineHeight: 1,
+              fontWeight: 800, fontSize: 22,
+              letterSpacing: "-0.03em", color: "#111", fontStyle: "normal", lineHeight: 1,
             }}>
               gramble<span style={{ color: GB }}>.</span><span style={{ color: GB }}>in</span>
             </div>
@@ -503,11 +503,12 @@ function Layout({ user, onLogin, onLogout }) {
         >
           <span style={{
             fontFamily: "'Outfit', var(--font-headline), sans-serif",
-            fontWeight: 900, fontSize: isMobile ? 22 : 26,
-            letterSpacing: "-0.04em", color: "#111",
+            fontWeight: 800, fontSize: isMobile ? 24 : 30,
+            letterSpacing: "-0.03em", color: "#111",
+            fontStyle: "normal",
             lineHeight: 1, userSelect: "none",
           }}>
-            gramble<span style={{ color: GB }}>.</span><span style={{ color: GB }}>in</span>
+            gramble<span style={{ color: GB, fontWeight: 800 }}>.</span><span style={{ color: GB, fontWeight: 800 }}>in</span>
           </span>
         </div>
 
