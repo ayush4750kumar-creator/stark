@@ -28,7 +28,7 @@ const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
 
 const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
-// ── Outfit font injection (closest match to Gramble's typeface) ───────────
+// ── Outfit font injection ─────────────────────────────────────────────────
 function FontInjector() {
   useEffect(() => {
     if (document.getElementById("gramble-font")) return;
@@ -52,6 +52,30 @@ function FontInjector() {
     document.head.appendChild(style);
   }, []);
   return null;
+}
+
+// ── gramble.in Logo — matches the uploaded brand mark exactly ─────────────
+// "gramble" in near-black heavy weight, ".in" in sky-blue, same weight.
+// The period is part of ".in" and rendered in sky-blue (not a separate dot).
+function GrambleLogo({ size = 28 }) {
+  return (
+    <span
+      style={{
+        fontFamily: "'Outfit', var(--font-headline), sans-serif",
+        fontWeight: 800,
+        fontSize: size,
+        letterSpacing: "-0.03em",
+        lineHeight: 1,
+        userSelect: "none",
+        display: "inline-flex",
+        alignItems: "baseline",
+      }}
+    >
+      <span style={{ color: "#111" }}>gramble</span>
+      <span style={{ color: GB }}>.</span>
+      <span style={{ color: GB }}>in</span>
+    </span>
+  );
 }
 
 // ── Collapsible search bar ────────────────────────────────────────────────
@@ -103,7 +127,7 @@ function CollapsibleSearch({ onAddTracked, onSelectStock }) {
   );
 }
 
-// ── Inline auth modal (replaces LoginPage in modal) ───────────────────────
+// ── Inline auth modal ─────────────────────────────────────────────────────
 function AuthModal({ onLogin, onClose }) {
   const [mode, setMode]         = useState("signup");
   const [name, setName]         = useState("");
@@ -166,10 +190,7 @@ function AuthModal({ onLogin, onClose }) {
           overflow: "hidden", position: "relative",
         }}
       >
-        {/* Blue top stripe */}
         <div style={{ height: 4, background: `linear-gradient(90deg, ${GB}, ${GB2})`, flexShrink: 0 }} />
-
-        {/* Close */}
         <button onClick={onClose} style={{
           position: "absolute", top: 12, right: 12,
           width: 24, height: 24, borderRadius: "50%",
@@ -179,27 +200,17 @@ function AuthModal({ onLogin, onClose }) {
           fontWeight: 700,
         }}>✕</button>
 
-        {/* Content — NO overflow/scroll */}
         <div style={{
           flex: 1, display: "flex", flexDirection: "column",
           padding: "14px 24px 18px", gap: 9,
         }}>
-
-          {/* Branding */}
           <div style={{ textAlign: "center" }}>
-            <div style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontWeight: 800, fontSize: 22,
-              letterSpacing: "-0.03em", color: "#111", fontStyle: "normal", lineHeight: 1,
-            }}>
-              gramble<span style={{ color: GB }}>.</span><span style={{ color: GB }}>in</span>
-            </div>
+            <GrambleLogo size={22} />
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Outfit', sans-serif", fontWeight: 500, marginTop: 3 }}>
               {mode === "signup" ? "Create your account" : "Welcome back"}
             </div>
           </div>
 
-          {/* Fields */}
           <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
             {mode === "signup" && (
               <input
@@ -232,7 +243,6 @@ function AuthModal({ onLogin, onClose }) {
             />
           </div>
 
-          {/* Error */}
           {error && (
             <div style={{
               fontSize: 11, color: "#e53e3e",
@@ -241,7 +251,6 @@ function AuthModal({ onLogin, onClose }) {
             }}>{error}</div>
           )}
 
-          {/* Primary button */}
           <button
             onClick={submit}
             disabled={loading}
@@ -258,25 +267,18 @@ function AuthModal({ onLogin, onClose }) {
             {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
           </button>
 
-          {/* Switch mode — plain text link, no button */}
           <div style={{ textAlign: "center" }}>
             {mode === "signup" ? (
               <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
                 Already have an account?{" "}
-                <span
-                  onClick={() => switchMode("login")}
-                  style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
-                >
+                <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
                   Log in
                 </span>
               </span>
             ) : (
               <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
                 New here?{" "}
-                <span
-                  onClick={() => switchMode("signup")}
-                  style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
-                >
+                <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
                   Create a new account
                 </span>
               </span>
@@ -493,7 +495,7 @@ function Layout({ user, onLogin, onLogout }) {
         gap: isMobile ? 10 : 16,
       }}>
 
-        {/* Logo: gramble.in */}
+        {/* ── LOGO: gramble.in — identical to brand mark, acts as "go home" button ── */}
         <div
           style={{ display: "flex", alignItems: "center", flexShrink: 0, cursor: "pointer" }}
           onClick={() => {
@@ -501,15 +503,7 @@ function Layout({ user, onLogin, onLogout }) {
             if (window.__isDashboardOpen && window.__isDashboardOpen()) window.__closeDashboard && window.__closeDashboard();
           }}
         >
-          <span style={{
-            fontFamily: "'Outfit', var(--font-headline), sans-serif",
-            fontWeight: 800, fontSize: isMobile ? 24 : 30,
-            letterSpacing: "-0.03em", color: "#111",
-            fontStyle: "normal",
-            lineHeight: 1, userSelect: "none",
-          }}>
-            gramble<span style={{ color: GB, fontWeight: 800 }}>.</span><span style={{ color: GB, fontWeight: 800 }}>in</span>
-          </span>
+          <GrambleLogo size={isMobile ? 24 : 30} />
         </div>
 
         {/* Collapsible search (desktop) */}
@@ -567,7 +561,6 @@ function Layout({ user, onLogin, onLogout }) {
               </button>
             </div>
           ) : (
-            /* Single Account button */
             <button
               onClick={() => setShowLoginModal(true)}
               style={{
@@ -705,6 +698,27 @@ function Layout({ user, onLogin, onLogout }) {
           onClose={() => setShowLoginModal(false)}
         />
       )}
+
+      {/* ── Global styles for selected stock highlight ── */}
+      <style>{`
+        /* Selected / active stock pill — light blue instead of black */
+        .stock-pill-active,
+        [data-active="true"],
+        .tracked-stock-item.active,
+        .sidebar-stock-active {
+          background: ${GBBG} !important;
+          color: ${GB2} !important;
+          border-color: ${GB} !important;
+        }
+        .stock-pill-active *,
+        [data-active="true"] *,
+        .tracked-stock-item.active *,
+        .sidebar-stock-active * {
+          color: ${GB2} !important;
+        }
+        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+        @keyframes fadeInFast { from { opacity:0; transform:translateY(-4px) } to { opacity:1; transform:translateY(0) } }
+      `}</style>
     </div>
   );
 }

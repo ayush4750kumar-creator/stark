@@ -27,12 +27,13 @@ const POPULAR = [
   { symbol: "MARUTI",     name: "Maruti Suzuki",             exchange: "NSE",    sector: "Auto" },
 ];
 
-export default function SearchBar({ onAddTracked, onSelectStock }) {
+export default function SearchBar({ onAddTracked, onSelectStock, autoFocus }) {
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState([]);
   const [open,    setOpen]    = useState(false);
   const [loading, setLoading] = useState(false);
   const ref      = useRef();
+  const inputRef = useRef();          // ← NEW: direct ref to <input>
   const timerRef = useRef();
   const navigate = useNavigate();
 
@@ -42,6 +43,15 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  // ── FIX 1: honour autoFocus prop ─────────────────────────────────────────
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      // Small delay so the expand animation has time to run
+      const t = setTimeout(() => inputRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
+  }, [autoFocus]);
 
   const handleSearch = useCallback((q) => {
     setQuery(q);
@@ -65,14 +75,28 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
           setOpen(true);
         } else if (local.length === 0) {
           setResults([]);
+          // ── FIX 2: still open the "no results" panel even with 0 matches ─
+          setOpen(true);
         }
       } catch {
         // Keep local results on error
+        if (local.length === 0) setOpen(true);
       } finally {
         setLoading(false);
       }
     }, 350);
   }, []);
+
+  // ── FIX 3: show popular suggestions on focus when query is empty ──────────
+  const handleFocus = () => {
+    if (query.trim()) {
+      if (results.length > 0) setOpen(true);
+    } else {
+      // Show popular list immediately on focus with no query
+      setResults(POPULAR.slice(0, 8));
+      setOpen(true);
+    }
+  };
 
   // Clicking the row body → switch feed to that company's news
   const handleOpenStock = (stock) => {
@@ -107,11 +131,12 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input
+          ref={inputRef}                  /* ← attach ref */
           className="search-input"
           placeholder="Search any stock worldwide... AAPL, TSLA, RELIANCE"
           value={query}
           onChange={e => handleSearch(e.target.value)}
-          onFocus={() => { if (results.length > 0) setOpen(true); }}
+          onFocus={handleFocus}           /* ← fixed handler */
           style={{ paddingLeft: 34, paddingRight: loading ? 36 : 12 }}
         />
         {loading && (
@@ -128,7 +153,7 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
           maxHeight:380, overflowY:"auto",
         }}>
           <div style={{ padding:"7px 14px 5px", fontSize:10, color:"var(--text3)", fontFamily:"var(--font-display)", fontWeight:700, borderBottom:"1px solid var(--border)", letterSpacing:1 }}>
-            {results.length} STOCKS FOUND
+            {query.trim() ? `${results.length} STOCKS FOUND` : "POPULAR STOCKS"}
           </div>
 
           {results.map((stock, i) => (
@@ -143,7 +168,7 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
               onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}
             >
-              {/* Stock info — clicking this opens company page */}
+              {/* Stock info */}
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
                   <span style={{ fontFamily:"var(--font-display)", fontWeight:800, fontSize:13 }}>{stock.symbol}</span>
@@ -164,7 +189,6 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
               </div>
 
               <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0, marginLeft:12 }}>
-                {/* Price (if available) */}
                 {stock.price != null && stock.price > 0 && (
                   <div style={{ textAlign:"right" }}>
                     <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:13 }}>
@@ -178,7 +202,6 @@ export default function SearchBar({ onAddTracked, onSelectStock }) {
                   </div>
                 )}
 
-                {/* + button — only tracks, does NOT open page */}
                 <div
                   onClick={e => handleTrack(e, stock)}
                   title="Add to watchlist"
