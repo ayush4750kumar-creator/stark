@@ -16,23 +16,284 @@ import IntradayScreenerPage   from "./pages/IntradayScreenerPage";
 import IndicesScreenerPage    from "./pages/IndicesScreenerPage";
 import MutualFundsPage   from "./pages/MutualFundsPage";
 import MorePage          from "./pages/MorePage";
-import LoginPage         from "./pages/LoginPage";
 
 const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
-// ── Gramble brand sky-blue (matched from gramble.in logo)
-const GRAMBLE_BLUE     = "#6AAFE6";
-const GRAMBLE_BLUE_BG  = "#EAF4FC";   // very light tint for selected state
-const GRAMBLE_BLUE_MID = "#5BA3DD";   // slightly deeper for borders/hover
+// ── Gramble brand palette ──────────────────────────────────────────────────
+const GB   = "#6AAFE6";   // gramble sky-blue (.in colour)
+const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
+const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
+// ──────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
+// ── Outfit font injection (closest match to Gramble's typeface) ───────────
+function FontInjector() {
+  useEffect(() => {
+    if (document.getElementById("gramble-font")) return;
+    const link = document.createElement("link");
+    link.id   = "gramble-font";
+    link.rel  = "stylesheet";
+    link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap";
+    document.head.appendChild(link);
+    const style = document.createElement("style");
+    style.id = "gramble-font-override";
+    style.innerHTML = `
+      :root {
+        --font-display: 'Outfit', 'Inter', sans-serif !important;
+        --font-headline: 'Outfit', 'Inter', sans-serif !important;
+        --font-body: 'Outfit', 'Inter', sans-serif !important;
+      }
+      body, button, input, select, textarea {
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+  return null;
+}
+
+// ── Collapsible search bar ────────────────────────────────────────────────
+function CollapsibleSearch({ onAddTracked, onSelectStock }) {
+  const [expanded, setExpanded] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setExpanded(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={wrapRef} style={{ display: "flex", alignItems: "center", position: "relative" }}>
+      <button
+        onClick={() => setExpanded(v => !v)}
+        style={{
+          width: 34, height: 34, borderRadius: 9,
+          border: `1.5px solid ${expanded ? GB : "var(--border2)"}`,
+          background: expanded ? GBBG : "transparent",
+          color: expanded ? GB2 : "var(--text3)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+        }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <div style={{
+        overflow: "hidden",
+        maxWidth: expanded ? 280 : 0,
+        opacity: expanded ? 1 : 0,
+        transition: "max-width 0.25s ease, opacity 0.2s ease",
+        marginLeft: expanded ? 8 : 0,
+      }}>
+        <div style={{ width: 280 }}>
+          <SearchBar
+            onAddTracked={onAddTracked}
+            onSelectStock={(s) => { onSelectStock(s); setExpanded(false); }}
+            autoFocus={expanded}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Inline auth modal (replaces LoginPage in modal) ───────────────────────
+function AuthModal({ onLogin, onClose }) {
+  const [mode, setMode]         = useState("signup");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+
+  const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
+
+  const submit = async () => {
+    setError(""); setLoading(true);
+    try {
+      const body = mode === "signup" ? { name, email, password } : { email, password };
+      const res  = await fetch(`${API}/${mode === "signup" ? "register" : "login"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem("sp_token", data.token || data.user?.token || "");
+        onLogin({ ...data.user, token: data.token || data.user?.token });
+      } else {
+        setError(data.message || "Something went wrong.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "9px 12px",
+    borderRadius: 8, border: "1.5px solid #e2e8f0",
+    fontFamily: "'Outfit', sans-serif", fontSize: 13, color: "#1a202c",
+    outline: "none", boxSizing: "border-box",
+    transition: "border-color 0.15s", background: "#fff",
+  };
+
+  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: 360, height: 360,
+          borderRadius: 18, background: "#fff",
+          border: `2px solid ${GB}`,
+          boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`,
+          display: "flex", flexDirection: "column",
+          overflow: "hidden", position: "relative",
+        }}
+      >
+        {/* Blue top stripe */}
+        <div style={{ height: 4, background: `linear-gradient(90deg, ${GB}, ${GB2})`, flexShrink: 0 }} />
+
+        {/* Close */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12,
+          width: 24, height: 24, borderRadius: "50%",
+          background: GBBG, border: `1px solid ${GB}`,
+          cursor: "pointer", fontSize: 11, color: GB2,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 700,
+        }}>✕</button>
+
+        {/* Content — NO overflow/scroll */}
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column",
+          padding: "14px 24px 18px", gap: 9,
+        }}>
+
+          {/* Branding */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontWeight: 900, fontSize: 22,
+              letterSpacing: "-0.04em", color: "#111", lineHeight: 1,
+            }}>
+              gramble<span style={{ color: GB }}>.</span><span style={{ color: GB }}>in</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Outfit', sans-serif", fontWeight: 500, marginTop: 3 }}>
+              {mode === "signup" ? "Create your account" : "Welcome back"}
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {mode === "signup" && (
+              <input
+                placeholder="Full name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = GB}
+                onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+              />
+            )}
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = GB}
+              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = GB}
+              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+            />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              fontSize: 11, color: "#e53e3e",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 500,
+              background: "#fff5f5", padding: "5px 10px", borderRadius: 6,
+            }}>{error}</div>
+          )}
+
+          {/* Primary button */}
+          <button
+            onClick={submit}
+            disabled={loading}
+            style={{
+              padding: "10px", borderRadius: 9, border: "none",
+              background: loading ? GB2 : GB, color: "#fff",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5,
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}
+          >
+            {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
+          </button>
+
+          {/* Switch mode — plain text link, no button */}
+          <div style={{ textAlign: "center" }}>
+            {mode === "signup" ? (
+              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                Already have an account?{" "}
+                <span
+                  onClick={() => switchMode("login")}
+                  style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Log in
+                </span>
+              </span>
+            ) : (
+              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                New here?{" "}
+                <span
+                  onClick={() => switchMode("signup")}
+                  style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Create a new account
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function Layout({ user, onLogin, onLogout }) {
   const [trackedStocks, setTrackedStocks] = useState([]);
-  const [overlay, setOverlay] = useState(null);
+  const [overlay, setOverlay]             = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginModalMode, setLoginModalMode] = useState("login");
 
   const PATH_TITLES = {
     "/fo/stocks":         "F&O Stocks",
@@ -53,9 +314,8 @@ function Layout({ user, onLogin, onLogout }) {
     return () => { delete window.__setOverlay; };
   }, []);
 
-  const fetchedAt = useRef({});
+  const fetchedAt  = useRef({});
   const [activeFilter, setActiveFilter] = useState("global");
-  const [openPage, setOpenPage]         = useState(null);
   const [activeStock, setActiveStock]   = useState(null);
   const [isMobile, setIsMobile]         = useState(window.innerWidth < 900);
   const location = useLocation();
@@ -70,24 +330,18 @@ function Layout({ user, onLogin, onLogout }) {
   useEffect(() => {
     async function bootStocks() {
       let symbolsToLoad = DEFAULT_SYMBOLS;
-
       if (user?.token) {
         try {
-          const res  = await fetch(`${BACKEND}/auth/watchlist`, {
-            headers: { Authorization: `Bearer ${user.token}` }
-          });
+          const res  = await fetch(`${BACKEND}/auth/watchlist`, { headers: { Authorization: `Bearer ${user.token}` } });
           const data = await res.json();
-          if (data.success && data.data?.length) {
-            symbolsToLoad = data.data;
-          }
+          if (data.success && data.data?.length) symbolsToLoad = data.data;
         } catch {}
       } else {
         try {
-          const saved = localStorage.getItem(`sp_tracked_guest`);
+          const saved = localStorage.getItem("sp_tracked_guest");
           if (saved) symbolsToLoad = JSON.parse(saved);
         } catch {}
       }
-
       const loaded = [];
       for (const sym of symbolsToLoad) {
         try {
@@ -95,14 +349,10 @@ function Layout({ user, onLogin, onLogout }) {
           const data = await res.json();
           if (data.success && data.data) {
             loaded.push({
-              symbol:     data.data.symbol,
-              name:       data.data.name,
-              sector:     data.data.sector || "Stock",
-              price:      data.data.price,
-              change:     data.data.change_amt,
-              changePct:  data.data.change_pct,
-              change_pct: data.data.change_pct,
-              currency:   data.data.currency,
+              symbol: data.data.symbol, name: data.data.name,
+              sector: data.data.sector || "Stock", price: data.data.price,
+              change: data.data.change_amt, changePct: data.data.change_pct,
+              change_pct: data.data.change_pct, currency: data.data.currency,
             });
           }
         } catch {}
@@ -112,8 +362,7 @@ function Layout({ user, onLogin, onLogout }) {
         for (const s of loaded) {
           fetchedAt.current[s.symbol] = Date.now();
           fetch(`${BACKEND}/news/fetch-stock`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ symbol: s.symbol, company: s.name }),
           }).catch(() => {});
         }
@@ -133,13 +382,7 @@ function Layout({ user, onLogin, onLogout }) {
       setTrackedStocks(prev => prev.map(stock => {
         const live = liveMap[stock.symbol];
         if (!live || !live.price) return stock;
-        return {
-          ...stock,
-          price:      live.price,
-          change:     live.change_amt,
-          changePct:  live.change_pct,
-          change_pct: live.change_pct,
-        };
+        return { ...stock, price: live.price, change: live.change_amt, changePct: live.change_pct, change_pct: live.change_pct };
       }));
     } catch {}
   }, [trackedStocks.length]);
@@ -152,47 +395,31 @@ function Layout({ user, onLogin, onLogout }) {
 
   useEffect(() => {
     if (user?.token || trackedStocks.length === 0) return;
-    try {
-      localStorage.setItem("sp_tracked_guest", JSON.stringify(trackedStocks.map(s => s.symbol)));
-    } catch {}
+    try { localStorage.setItem("sp_tracked_guest", JSON.stringify(trackedStocks.map(s => s.symbol))); } catch {}
   }, [trackedStocks, user?.token]);
 
   const addTracked = useCallback(async (stockOrSymbol) => {
-    // ── Require login to add to watchlist ──
-    if (!user) {
-      setLoginModalMode("login");
-      setShowLoginModal(true);
-      return;
-    }
-
+    if (!user) { setShowLoginModal(true); return; }
     let stock = typeof stockOrSymbol === "string"
-      ? { symbol: stockOrSymbol, name: stockOrSymbol }
-      : stockOrSymbol;
-
+      ? { symbol: stockOrSymbol, name: stockOrSymbol } : stockOrSymbol;
     if (!stock?.symbol) return;
-
     try {
       const res  = await fetch(`${BACKEND}/stocks/${stock.symbol}`);
       const data = await res.json();
       if (data.success && data.data) {
         stock = {
-          symbol:     data.data.symbol,
-          name:       data.data.name       || stock.name,
-          sector:     data.data.sector     || stock.sector || "Stock",
-          price:      data.data.price,
-          change:     data.data.change_amt,
-          changePct:  data.data.change_pct,
-          change_pct: data.data.change_pct,
-          currency:   data.data.currency,
+          symbol: data.data.symbol, name: data.data.name || stock.name,
+          sector: data.data.sector || stock.sector || "Stock",
+          price: data.data.price, change: data.data.change_amt,
+          changePct: data.data.change_pct, change_pct: data.data.change_pct,
+          currency: data.data.currency,
         };
       }
     } catch {}
-
     setTrackedStocks(prev => {
       if (prev.find(s => s.symbol === stock.symbol)) return prev;
       return [...prev, stock];
     });
-
     if (user?.token) {
       try {
         await fetch(`${BACKEND}/auth/watchlist`, {
@@ -202,7 +429,6 @@ function Layout({ user, onLogin, onLogout }) {
         });
       } catch {}
     }
-
     setActiveFilter(stock.symbol);
     setActiveStock(stock);
     triggerInstantFetch(stock.symbol, stock.name);
@@ -214,8 +440,7 @@ function Layout({ user, onLogin, onLogout }) {
     if (Date.now() - last < CACHE_MS) return;
     fetchedAt.current[symbol] = Date.now();
     fetch(`${BACKEND}/news/fetch-stock`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ symbol, company: name }),
     }).catch(() => {});
   }
@@ -225,10 +450,7 @@ function Layout({ user, onLogin, onLogout }) {
     if (activeFilter === symbol) setActiveFilter("global");
     if (user?.token) {
       try {
-        await fetch(`${BACKEND}/auth/watchlist/${symbol}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
+        await fetch(`${BACKEND}/auth/watchlist/${symbol}`, { method: "DELETE", headers: { Authorization: `Bearer ${user.token}` } });
       } catch {}
     }
   };
@@ -257,15 +479,10 @@ function Layout({ user, onLogin, onLogout }) {
     }
   };
 
-  const openLoginModal = (mode = "login") => {
-    setLoginModalMode(mode);
-    setShowLoginModal(true);
-  };
-
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* HEADER */}
+      {/* ── HEADER ── */}
       <header style={{
         flexShrink: 0, zIndex: 200,
         background: "rgba(255,255,255,0.97)",
@@ -273,60 +490,74 @@ function Layout({ user, onLogin, onLogout }) {
         borderBottom: "1px solid var(--border)",
         display: "flex", alignItems: "center",
         padding: isMobile ? "10px 14px" : "12px 20px",
-        gap: isMobile ? 10 : 20,
+        gap: isMobile ? 10 : 16,
       }}>
+
+        {/* Logo: gramble.in */}
         <div
-          style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, cursor: "pointer" }}
+          style={{ display: "flex", alignItems: "center", flexShrink: 0, cursor: "pointer" }}
           onClick={() => {
             handleFilterChange("global");
-            if (window.__isDashboardOpen && window.__isDashboardOpen()) {
-              window.__closeDashboard && window.__closeDashboard();
-            }
+            if (window.__isDashboardOpen && window.__isDashboardOpen()) window.__closeDashboard && window.__closeDashboard();
           }}
         >
           <span style={{
-            fontFamily: "var(--font-headline)",
-            fontWeight: 900, fontSize: 28,
-            letterSpacing: "-0.03em", color: "var(--text)",
-            fontStyle: "italic", lineHeight: 1, userSelect: "none",
+            fontFamily: "'Outfit', var(--font-headline), sans-serif",
+            fontWeight: 900, fontSize: isMobile ? 22 : 26,
+            letterSpacing: "-0.04em", color: "#111",
+            lineHeight: 1, userSelect: "none",
           }}>
-            Gramble
+            gramble<span style={{ color: GB }}>.</span><span style={{ color: GB }}>in</span>
           </span>
         </div>
 
-        {!isMobile && <SearchBar onAddTracked={addTracked} onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)} />}
+        {/* Collapsible search (desktop) */}
+        {!isMobile && (
+          <CollapsibleSearch
+            onAddTracked={addTracked}
+            onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)}
+          />
+        )}
+
         {!isMobile && <NavTabs />}
 
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          {isMobile && <SearchBar onAddTracked={addTracked} onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)} />}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
 
-          {/* ── Profile area: logged in vs logged out ── */}
+          {/* Collapsible search (mobile) */}
+          {isMobile && (
+            <CollapsibleSearch
+              onAddTracked={addTracked}
+              onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)}
+            />
+          )}
+
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: `linear-gradient(135deg, ${GRAMBLE_BLUE}, ${GRAMBLE_BLUE_MID})`,
+                width: 32, height: 32, borderRadius: 9,
+                background: `linear-gradient(135deg, ${GB}, ${GB2})`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "var(--font-display)", fontWeight: 800, color: "#fff", fontSize: 12, flexShrink: 0,
+                fontFamily: "'Outfit', sans-serif", fontWeight: 800,
+                color: "#fff", fontSize: 12, flexShrink: 0,
               }}>
                 {user.initials}
               </div>
               {!isMobile && (
-                <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
                   {user.name}
                 </span>
               )}
               <button onClick={onLogout} style={{
                 display: "flex", alignItems: "center", gap: 5,
-                padding: "7px 12px", borderRadius: 8, background: "transparent",
+                padding: "6px 11px", borderRadius: 8, background: "transparent",
                 border: "1px solid var(--border2)", color: "var(--text3)",
-                cursor: "pointer", fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
                 transition: "all 0.2s",
               }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--bear)"; e.currentTarget.style.color = "var(--bear)"; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#fc8181"; e.currentTarget.style.color = "#e53e3e"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" y1="12" x2="9" y2="12"/>
@@ -335,30 +566,19 @@ function Layout({ user, onLogin, onLogout }) {
               </button>
             </div>
           ) : (
-            // ── Single "Account" button – opens modal with Login / Sign Up tabs inside ──
+            /* Single Account button */
             <button
-              onClick={() => openLoginModal("login")}
+              onClick={() => setShowLoginModal(true)}
               style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "7px 14px", borderRadius: 8,
-                border: `1.5px solid ${GRAMBLE_BLUE}`,
-                background: GRAMBLE_BLUE_BG,
-                color: GRAMBLE_BLUE_MID,
-                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
+                border: `1.5px solid ${GB}`, background: GBBG, color: GB2,
+                fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 12.5,
                 cursor: "pointer", transition: "all 0.2s",
               }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = GRAMBLE_BLUE;
-                e.currentTarget.style.color = "#fff";
-                e.currentTarget.style.borderColor = GRAMBLE_BLUE;
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = GRAMBLE_BLUE_BG;
-                e.currentTarget.style.color = GRAMBLE_BLUE_MID;
-                e.currentTarget.style.borderColor = GRAMBLE_BLUE;
-              }}
+              onMouseEnter={e => { e.currentTarget.style.background = GB; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = GBBG; e.currentTarget.style.color = GB2; }}
             >
-              {/* Person icon */}
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
@@ -388,7 +608,7 @@ function Layout({ user, onLogin, onLogout }) {
               flex: 1, borderRadius: 18, border: "1px solid var(--border2)",
               background: "var(--bg)", overflow: "hidden",
               display: "flex", flexDirection: "column",
-              boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
             }}>
               <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
                 <LeftSidebar
@@ -413,11 +633,8 @@ function Layout({ user, onLogin, onLogout }) {
                 onTrack={addTracked}
                 trackedSymbols={trackedSymbols}
                 onGoGlobal={() => {
-                  if (window.__dashboardBackOverride) {
-                    window.__dashboardBackOverride();
-                  } else {
-                    handleFilterChange("global");
-                  }
+                  if (window.__dashboardBackOverride) window.__dashboardBackOverride();
+                  else handleFilterChange("global");
                 }}
                 onSwitchToStock={(sym) => handleFilterChange(sym)}
               />
@@ -433,7 +650,7 @@ function Layout({ user, onLogin, onLogout }) {
               flex: 1, borderRadius: 18, border: "1px solid var(--border2)",
               background: "var(--bg)", overflow: "hidden",
               display: "flex", flexDirection: "column",
-              boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
+              boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
             }}>
               <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
                 <RightSidebar onSelectCategory={(catId) => handleFilterChange("cat:" + catId)} />
@@ -459,8 +676,8 @@ function Layout({ user, onLogin, onLogout }) {
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--text3)", padding: 0 }}>
               ←
             </button>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>{overlay.title}</span>
-            <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text3)", fontFamily: "var(--font-display)" }}>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 15 }}>{overlay.title}</span>
+            <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text3)", fontFamily: "'Outfit', sans-serif" }}>
               Live · refreshes every 5 min
             </span>
           </div>
@@ -480,97 +697,18 @@ function Layout({ user, onLogin, onLogout }) {
         </div>
       )}
 
-      {/* ── Login / Sign-Up modal ── */}
+      {/* ── Auth modal ── */}
       {showLoginModal && (
-        <div
-          onClick={() => setShowLoginModal(false)}
-          style={{
-            position: "fixed", inset: 0, zIndex: 1000,
-            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 20,
-          }}
-        >
-          {/* ── Square compact card with Gramble-blue accent ── */}
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: "relative",
-              width: 360, height: 360,          /* square */
-              borderRadius: 16,
-              background: "#fff",
-              border: `2px solid ${GRAMBLE_BLUE}`,
-              boxShadow: `0 8px 40px rgba(106,175,230,0.25), 0 2px 12px rgba(0,0,0,0.10)`,
-              overflow: "hidden",
-              display: "flex", flexDirection: "column",
-            }}
-          >
-            {/* Blue top stripe */}
-            <div style={{
-              height: 5, flexShrink: 0,
-              background: `linear-gradient(90deg, ${GRAMBLE_BLUE}, ${GRAMBLE_BLUE_MID})`,
-            }} />
-
-            {/* Close button */}
-            <button
-              onClick={() => setShowLoginModal(false)}
-              style={{
-                position: "absolute", top: 14, right: 14, zIndex: 10,
-                width: 26, height: 26, borderRadius: "50%",
-                background: GRAMBLE_BLUE_BG,
-                border: `1px solid ${GRAMBLE_BLUE}`,
-                cursor: "pointer", fontSize: 13, color: GRAMBLE_BLUE_MID,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                lineHeight: 1,
-              }}
-            >✕</button>
-
-            {/* ── Tab switcher: Log In / Sign Up ── */}
-            <div style={{
-              flexShrink: 0,
-              display: "flex",
-              borderBottom: `1px solid ${GRAMBLE_BLUE}22`,
-              margin: "10px 20px 0",
-              gap: 4,
-            }}>
-              {["login", "signup"].map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setLoginModalMode(mode)}
-                  style={{
-                    flex: 1, padding: "8px 0",
-                    border: "none", borderRadius: "6px 6px 0 0",
-                    cursor: "pointer", transition: "all 0.15s",
-                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5,
-                    background: loginModalMode === mode ? GRAMBLE_BLUE : "transparent",
-                    color: loginModalMode === mode ? "#fff" : GRAMBLE_BLUE_MID,
-                    borderBottom: loginModalMode === mode ? `2px solid ${GRAMBLE_BLUE}` : "2px solid transparent",
-                  }}
-                >
-                  {mode === "login" ? "Log In" : "Sign Up"}
-                </button>
-              ))}
-            </div>
-
-            {/* LoginPage fills the rest */}
-            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-              <LoginPage
-                initialMode={loginModalMode}
-                onLogin={(u) => {
-                  onLogin(u);
-                  setShowLoginModal(false);
-                }}
-                compact={true}
-              />
-            </div>
-          </div>
-        </div>
+        <AuthModal
+          onLogin={(u) => { onLogin(u); setShowLoginModal(false); }}
+          onClose={() => setShowLoginModal(false)}
+        />
       )}
     </div>
   );
 }
 
-// ── Nav Tabs with dropdowns ──────────────────────────────────────────────
+// ── Nav Tabs ───────────────────────────────────────────────────────────────
 const NAV_TABS = [
   {
     label: "F&O", sub: "(Indian)",
@@ -634,32 +772,20 @@ function NavTabs() {
               style={{
                 display: "flex", alignItems: "center", gap: 3,
                 padding: "6px 11px", borderRadius: 7, border: "none",
-                // ── CHANGE: sky-blue tint when selected instead of dark bg ──
-                background: isActive ? GRAMBLE_BLUE_BG : "transparent",
+                background: isActive ? GBBG : "transparent",
                 cursor: "pointer", transition: "background 0.15s",
-                fontFamily: "var(--font-display)", fontWeight: 600,
+                fontFamily: "'Outfit', sans-serif", fontWeight: 600,
                 fontSize: 12.5,
-                // ── CHANGE: Gramble blue text when active ──
-                color: isActive ? GRAMBLE_BLUE_MID : "var(--text2)",
+                color: isActive ? GB2 : "var(--text2)",
                 whiteSpace: "nowrap",
               }}
-              onMouseEnter={e => {
-                if (!isActive) e.currentTarget.style.background = GRAMBLE_BLUE_BG;
-                if (!isActive) e.currentTarget.style.color = GRAMBLE_BLUE_MID;
-              }}
-              onMouseLeave={e => {
-                if (!isActive) e.currentTarget.style.background = "transparent";
-                if (!isActive) e.currentTarget.style.color = "var(--text2)";
-              }}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = GBBG; e.currentTarget.style.color = GB2; } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text2)"; } }}
             >
               {tab.label}
-              {tab.sub && (
-                <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>{tab.sub}</span>
-              )}
+              {tab.sub && <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>{tab.sub}</span>}
               <span style={{
-                fontSize: 8,
-                color: isActive ? GRAMBLE_BLUE_MID : "var(--text3)",
-                marginLeft: 2,
+                fontSize: 8, color: isActive ? GB2 : "var(--text3)", marginLeft: 2,
                 transform: isActive ? "rotate(180deg)" : "none",
                 transition: "transform 0.15s", display: "inline-block",
               }}>▼</span>
@@ -682,10 +808,10 @@ function NavTabs() {
                       padding: "10px 14px",
                       borderBottom: i < tab.items.length - 1 ? "1px solid var(--border)" : "none",
                       cursor: "pointer", transition: "background 0.1s",
-                      fontFamily: "var(--font-display)", fontWeight: 600,
+                      fontFamily: "'Outfit', sans-serif", fontWeight: 600,
                       fontSize: 12.5, color: "var(--text2)",
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = GRAMBLE_BLUE_BG}
+                    onMouseEnter={e => e.currentTarget.style.background = GBBG}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
                     <span style={{ fontSize: 14 }}>{item.icon}</span>
@@ -704,7 +830,6 @@ function NavTabs() {
 export default function App() {
   const [user, setUser] = useState(null);
 
-  // On first load, check for saved token
   useEffect(() => {
     const saved = localStorage.getItem("sp_token");
     if (!saved) return;
@@ -719,14 +844,12 @@ export default function App() {
       .catch(() => localStorage.removeItem("sp_token"));
   }, []);
 
-  const handleLogin = (u) => setUser(u);
-  const handleLogout = () => {
-    localStorage.removeItem("sp_token");
-    setUser(null);
-  };
+  const handleLogin  = (u) => setUser(u);
+  const handleLogout = () => { localStorage.removeItem("sp_token"); setUser(null); };
 
   return (
     <BrowserRouter>
+      <FontInjector />
       <NavigateInjector />
       <Layout user={user} onLogin={handleLogin} onLogout={handleLogout} />
     </BrowserRouter>
