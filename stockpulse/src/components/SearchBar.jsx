@@ -1,5 +1,5 @@
 // src/components/SearchBar.jsx
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const BACKEND = process.env.REACT_APP_API_URL;
@@ -32,87 +32,102 @@ export default function SearchBar({ onAddTracked, onSelectStock, autoFocus }) {
   const [results, setResults] = useState([]);
   const [open,    setOpen]    = useState(false);
   const [loading, setLoading] = useState(false);
-  const ref      = useRef();
-  const inputRef = useRef();          // ← NEW: direct ref to <input>
-  const timerRef = useRef();
-  const navigate = useNavigate();
+  const ref             = useRef();
+  const inputRef        = useRef();
+  const timerRef        = useRef();
+  // Prevents blur from closing dropdown when user clicks a result
+  const mouseInDropdown = useRef(false);
+  const navigate        = useNavigate();
 
-  // Close dropdown when clicking outside
+  // Close on outside click
   useEffect(() => {
-    const h = e => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const h = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  // ── FIX 1: honour autoFocus prop ─────────────────────────────────────────
+  // Honor autoFocus — small delay lets expand animation run first
   useEffect(() => {
     if (autoFocus && inputRef.current) {
-      // Small delay so the expand animation has time to run
-      const t = setTimeout(() => inputRef.current?.focus(), 80);
+      const t = setTimeout(() => {
+        inputRef.current?.focus();
+        if (!query.trim()) {
+          setResults(POPULAR.slice(0, 8));
+          setOpen(true);
+        }
+      }, 90);
       return () => clearTimeout(t);
     }
   }, [autoFocus]);
 
-  const handleSearch = useCallback((q) => {
+  // ── Core search — plain function (not useCallback) to avoid stale closure on BACKEND ──
+  const handleSearch = (q) => {
     setQuery(q);
     clearTimeout(timerRef.current);
-    if (!q.trim()) { setResults([]); setOpen(false); return; }
 
-    // Instant local results while API loads
+    if (!q.trim()) {
+      setResults(POPULAR.slice(0, 8));
+      setOpen(true);
+      return;
+    }
+
+    // Instant local filter while API loads
     const qUp = q.toUpperCase();
-    const local = POPULAR.filter(s =>
-      s.symbol.includes(qUp) || s.name.toUpperCase().includes(qUp)
+    const local = POPULAR.filter(
+      (s) => s.symbol.includes(qUp) || s.name.toUpperCase().includes(qUp)
     ).slice(0, 5);
-    if (local.length) { setResults(local); setOpen(true); }
 
+    if (local.length) {
+      setResults(local);
+      setOpen(true);
+    }
+
+    // Debounced API call
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const res  = await fetch(`${BACKEND}/stocks/search?q=${encodeURIComponent(q)}`);
+        const base = BACKEND || "https://stark-production-4b5e.up.railway.app/api";
+        const res  = await fetch(`${base}/stocks/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         if (data.success && data.data?.length) {
           setResults(data.data);
           setOpen(true);
-        } else if (local.length === 0) {
+        } else if (!local.length) {
           setResults([]);
-          // ── FIX 2: still open the "no results" panel even with 0 matches ─
-          setOpen(true);
+          setOpen(true); // show "no results" panel
         }
       } catch {
-        // Keep local results on error
-        if (local.length === 0) setOpen(true);
+        // Network error — keep local results, show empty state if none
+        if (!local.length) {
+          setResults([]);
+          setOpen(true);
+        }
       } finally {
         setLoading(false);
       }
     }, 350);
-  }, []);
+  };
 
-  // ── FIX 3: show popular suggestions on focus when query is empty ──────────
   const handleFocus = () => {
     if (query.trim()) {
       if (results.length > 0) setOpen(true);
     } else {
-      // Show popular list immediately on focus with no query
       setResults(POPULAR.slice(0, 8));
       setOpen(true);
     }
   };
 
-  // Clicking the row body → switch feed to that company's news
   const handleOpenStock = (stock) => {
-    setQuery("");
-    setResults([]);
-    setOpen(false);
-    onSelectStock && onSelectStock(stock);
+    setQuery(""); setResults([]); setOpen(false);
+    onSelectStock?.(stock);
   };
 
-  // Clicking the + button → add to tracked watchlist
   const handleTrack = (e, stock) => {
     e.stopPropagation();
-    onAddTracked && onAddTracked(stock);
-    setQuery("");
-    setResults([]);
-    setOpen(false);
+    onAddTracked?.(stock);
+    setQuery(""); setResults([]); setOpen(false);
   };
 
   const currency = (stock) => {
@@ -126,33 +141,64 @@ export default function SearchBar({ onAddTracked, onSelectStock, autoFocus }) {
   return (
     <div ref={ref} style={{ position: "relative", flex: 1, maxWidth: 480 }}>
       <div style={{ position: "relative" }}>
-        <svg style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }}
-          width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        <svg
+          style={{
+            position: "absolute", left: 11, top: "50%",
+            transform: "translateY(-50%)",
+            color: "var(--text3)", pointerEvents: "none",
+          }}
+          width="15" height="15" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
         </svg>
         <input
-          ref={inputRef}                  /* ← attach ref */
+          ref={inputRef}
           className="search-input"
           placeholder="Search any stock worldwide... AAPL, TSLA, RELIANCE"
           value={query}
-          onChange={e => handleSearch(e.target.value)}
-          onFocus={handleFocus}           /* ← fixed handler */
+          onChange={(e) => handleSearch(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={() => {
+            // Only close if mouse is not inside the dropdown
+            if (!mouseInDropdown.current) {
+              setTimeout(() => setOpen(false), 150);
+            }
+          }}
           style={{ paddingLeft: 34, paddingRight: loading ? 36 : 12 }}
         />
         {loading && (
-          <div style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)", width:14, height:14, borderRadius:"50%", border:"2px solid var(--border2)", borderTopColor:"var(--accent)", animation:"spin 0.7s linear infinite" }} />
+          <div style={{
+            position: "absolute", right: 10, top: "50%",
+            transform: "translateY(-50%)",
+            width: 14, height: 14, borderRadius: "50%",
+            border: "2px solid var(--border2)",
+            borderTopColor: "var(--accent)",
+            animation: "spin 0.7s linear infinite",
+          }} />
         )}
       </div>
 
+      {/* ── Results dropdown ── */}
       {open && results.length > 0 && (
-        <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
-          background:"var(--bg2)", border:"1px solid var(--border2)",
-          borderRadius:12, overflow:"hidden",
-          zIndex:9999, boxShadow:"0 8px 40px rgba(0,0,0,0.15)",
-          maxHeight:380, overflowY:"auto",
-        }}>
-          <div style={{ padding:"7px 14px 5px", fontSize:10, color:"var(--text3)", fontFamily:"var(--font-display)", fontWeight:700, borderBottom:"1px solid var(--border)", letterSpacing:1 }}>
+        <div
+          onMouseEnter={() => { mouseInDropdown.current = true; }}
+          onMouseLeave={() => { mouseInDropdown.current = false; }}
+          style={{
+            position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+            background: "var(--bg2)", border: "1px solid var(--border2)",
+            borderRadius: 12, overflow: "hidden",
+            zIndex: 9999, boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
+            maxHeight: 380, overflowY: "auto",
+          }}
+        >
+          <div style={{
+            padding: "7px 14px 5px",
+            fontSize: 10, color: "var(--text3)",
+            fontFamily: "var(--font-display)", fontWeight: 700,
+            borderBottom: "1px solid var(--border)", letterSpacing: 1,
+          }}>
             {query.trim() ? `${results.length} STOCKS FOUND` : "POPULAR STOCKS"}
           </div>
 
@@ -161,76 +207,91 @@ export default function SearchBar({ onAddTracked, onSelectStock, autoFocus }) {
               key={`${stock.symbol}-${i}`}
               onClick={() => handleOpenStock(stock)}
               style={{
-                display:"flex", alignItems:"center", justifyContent:"space-between",
-                padding:"10px 14px", borderBottom:"1px solid var(--border)",
-                cursor:"pointer", transition:"background 0.1s",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "10px 14px", borderBottom: "1px solid var(--border)",
+                cursor: "pointer", transition: "background 0.1s",
               }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg3)"}
+              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
             >
-              {/* Stock info */}
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-                  <span style={{ fontFamily:"var(--font-display)", fontWeight:800, fontSize:13 }}>{stock.symbol}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13 }}>
+                    {stock.symbol}
+                  </span>
                   {stock.exchange && (
-                    <span style={{ fontSize:10, color:"var(--text3)", background:"var(--bg3)", padding:"1px 5px", borderRadius:4, border:"1px solid var(--border2)" }}>
+                    <span style={{
+                      fontSize: 10, color: "var(--text3)",
+                      background: "var(--bg3)", padding: "1px 5px",
+                      borderRadius: 4, border: "1px solid var(--border2)",
+                    }}>
                       {stock.exchange}
                     </span>
                   )}
                 </div>
-                <div style={{ color:"var(--text2)", fontSize:12, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                <div style={{
+                  color: "var(--text2)", fontSize: 12,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
                   {stock.name}
                 </div>
                 {stock.sector && stock.sector !== "Stock" && (
-                  <div style={{ color:"var(--accent)", fontSize:10, marginTop:1, fontFamily:"var(--font-display)" }}>
+                  <div style={{ color: "var(--accent)", fontSize: 10, marginTop: 1, fontFamily: "var(--font-display)" }}>
                     {stock.sector}
                   </div>
                 )}
               </div>
 
-              <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0, marginLeft:12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 12 }}>
                 {stock.price != null && stock.price > 0 && (
-                  <div style={{ textAlign:"right" }}>
-                    <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:13 }}>
-                      {currency(stock)}{stock.price.toLocaleString(undefined, { maximumFractionDigits:2 })}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13 }}>
+                      {currency(stock)}{stock.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </div>
                     {stock.change_pct != null && (
-                      <div style={{ fontSize:11, fontWeight:600, color:stock.change_pct >= 0 ? "var(--bull)" : "var(--bear)" }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 600,
+                        color: stock.change_pct >= 0 ? "var(--bull)" : "var(--bear)",
+                      }}>
                         {stock.change_pct >= 0 ? "+" : ""}{stock.change_pct.toFixed(2)}%
                       </div>
                     )}
                   </div>
                 )}
-
                 <div
-                  onClick={e => handleTrack(e, stock)}
+                  onClick={(e) => handleTrack(e, stock)}
                   title="Add to watchlist"
                   style={{
-                    width:30, height:30, borderRadius:8,
-                    background:"var(--accent)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    fontWeight:800, fontSize:18, color:"#fff", flexShrink:0,
-                    cursor:"pointer", transition:"transform 0.15s",
-                    userSelect:"none",
+                    width: 30, height: 30, borderRadius: 8,
+                    background: "var(--accent)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 800, fontSize: 18, color: "#fff", flexShrink: 0,
+                    cursor: "pointer", transition: "transform 0.15s",
+                    userSelect: "none",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
-                  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.12)"}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
                 >+</div>
               </div>
             </div>
           ))}
 
-          <div style={{ padding:"6px 14px", fontSize:10, color:"var(--text3)", textAlign:"center", borderTop:"1px solid var(--border)" }}>
+          <div style={{
+            padding: "6px 14px", fontSize: 10, color: "var(--text3)",
+            textAlign: "center", borderTop: "1px solid var(--border)",
+          }}>
             Click a stock to view its news · + to track
           </div>
         </div>
       )}
 
+      {/* No results */}
       {open && !loading && query.length > 1 && results.length === 0 && (
         <div style={{
-          position:"absolute", top:"calc(100% + 6px)", left:0, right:0,
-          background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12,
-          padding:"20px 14px", zIndex:9999, textAlign:"center", color:"var(--text3)", fontSize:13
+          position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+          background: "var(--bg2)", border: "1px solid var(--border2)",
+          borderRadius: 12, padding: "20px 14px",
+          zIndex: 9999, textAlign: "center", color: "var(--text3)", fontSize: 13,
         }}>
           No results for "{query}"
         </div>

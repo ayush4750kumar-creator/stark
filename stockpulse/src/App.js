@@ -21,21 +21,22 @@ const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
 // ── Gramble brand palette ──────────────────────────────────────────────────
-const GB   = "#6AAFE6";   // gramble sky-blue (.in colour)
+const GB   = "#6AAFE6";   // gramble sky-blue (.in colour) — matched from logo
 const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
 const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
 // ──────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
-// ── Outfit font injection ─────────────────────────────────────────────────
+// ── Outfit + Inter font injection ─────────────────────────────────────────
 function FontInjector() {
   useEffect(() => {
     if (document.getElementById("gramble-font")) return;
     const link = document.createElement("link");
     link.id   = "gramble-font";
     link.rel  = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap";
+    // Load both Outfit and Inter Black for the logo
+    link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap";
     document.head.appendChild(link);
     const style = document.createElement("style");
     style.id = "gramble-font-override";
@@ -54,24 +55,32 @@ function FontInjector() {
   return null;
 }
 
-// ── gramble.in Logo — matches the uploaded brand mark exactly ─────────────
-// "gramble" in near-black heavy weight, ".in" in sky-blue, same weight.
-// The period is part of ".in" and rendered in sky-blue (not a separate dot).
+// ── gramble.in Logo ────────────────────────────────────────────────────────
+// Matches the uploaded brand mark exactly:
+//   • "gramble" — near-black (#111), ultra-heavy weight, rounded/wide letterforms
+//   • "."       — sky-blue, same weight, circular dot (the period in ".in")
+//   • "in"      — sky-blue, same ultra-heavy weight
+//   • No gap between "gramble" and ".in" — the dot sits flush
+//   • letterSpacing slightly tight (like the logo)
+// The `size` prop scales everything proportionally.
 function GrambleLogo({ size = 28 }) {
   return (
     <span
       style={{
-        fontFamily: "'Outfit', var(--font-headline), sans-serif",
-        fontWeight: 800,
+        // Inter Black is the closest Google Font match to the logo's rounded heavy sans
+        fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
+        fontWeight: 900,
         fontSize: size,
-        letterSpacing: "-0.03em",
+        letterSpacing: "-0.04em",
         lineHeight: 1,
         userSelect: "none",
         display: "inline-flex",
         alignItems: "baseline",
+        gap: 0,
       }}
     >
       <span style={{ color: "#111" }}>gramble</span>
+      {/* The dot is part of ".in" — rendered in sky-blue, no extra spacing */}
       <span style={{ color: GB }}>.</span>
       <span style={{ color: GB }}>in</span>
     </span>
@@ -495,7 +504,7 @@ function Layout({ user, onLogin, onLogout }) {
         gap: isMobile ? 10 : 16,
       }}>
 
-        {/* ── LOGO: gramble.in — identical to brand mark, acts as "go home" button ── */}
+        {/* ── LOGO — click to go home ── */}
         <div
           style={{ display: "flex", alignItems: "center", flexShrink: 0, cursor: "pointer" }}
           onClick={() => {
@@ -503,7 +512,11 @@ function Layout({ user, onLogin, onLogout }) {
             if (window.__isDashboardOpen && window.__isDashboardOpen()) window.__closeDashboard && window.__closeDashboard();
           }}
         >
-          <GrambleLogo size={isMobile ? 24 : 30} />
+          {/*
+            Desktop: size=38 → big, prominent, matches brand mark proportions
+            Mobile:  size=28 → still readable, fits header
+          */}
+          <GrambleLogo size={isMobile ? 28 : 38} />
         </div>
 
         {/* Collapsible search (desktop) */}
@@ -699,9 +712,8 @@ function Layout({ user, onLogin, onLogout }) {
         />
       )}
 
-      {/* ── Global styles for selected stock highlight ── */}
+      {/* ── Global styles ── */}
       <style>{`
-        /* Selected / active stock pill — light blue instead of black */
         .stock-pill-active,
         [data-active="true"],
         .tracked-stock-item.active,
