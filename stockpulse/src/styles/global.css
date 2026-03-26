@@ -6,7 +6,7 @@
    Space Grotesk: Sharp geometric for UI labels and data
    Space Mono:   Monospace for prices/tickers â€” financial precision
    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -32,7 +32,7 @@
   --radius-sm: 7px;
 
   /* â”€â”€ Type system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     --font-headline : Playfair Display â€” for big article headlines,
+     --font-headline: 'Plus Jakarta Sans', sans-serif;
                        company names in hero positions
      --font-display  : Space Grotesk â€” for UI labels, tags, buttons,
                        numbers, metadata â€” sharp and modern
@@ -42,7 +42,7 @@
                        â€” conveys financial precision
      --font-bebas    : kept for GRAMBLE logo and large display numbers
   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-  --font-headline: 'Playfair Display', Georgia, serif;
+  --font-headline: 'Plus Jakarta Sans', sans-serif;
   --font-display:  'Space Grotesk', sans-serif;
   --font-body:     'DM Sans', sans-serif;
   --font-mono:     'Space Mono', 'Courier New', monospace;
