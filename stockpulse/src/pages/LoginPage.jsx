@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 
 const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
 
-export default function LoginPage({ onLogin }) {
-  const [mode, setMode]         = useState("login");
+export default function LoginPage({ onLogin, initialMode = "login" }) {
+const [mode, setMode] = useState(initialMode);
   const [name, setName]         = useState("");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");

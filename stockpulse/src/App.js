@@ -13,7 +13,7 @@ import CommoditiesPage   from "./pages/CommoditiesPage";
 import ScreenerPage           from "./pages/ScreenerPage";
 import ETFScreenerPage        from "./pages/ETFScreenerPage";
 import IntradayScreenerPage   from "./pages/IntradayScreenerPage";
-import IndicesScreenerPage    from "./pages/IndicesScreenerPage";  // ← NEW
+import IndicesScreenerPage    from "./pages/IndicesScreenerPage";
 import MutualFundsPage   from "./pages/MutualFundsPage";
 import MorePage          from "./pages/MorePage";
 import LoginPage         from "./pages/LoginPage";
@@ -21,12 +21,13 @@ import LoginPage         from "./pages/LoginPage";
 const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
-// Default symbols to track on first load
 const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
-function Layout({ user, onLogout }) {
+function Layout({ user, onLogin, onLogout }) {
   const [trackedStocks, setTrackedStocks] = useState([]);
-  const [overlay, setOverlay] = useState(null); // { path, title }
+  const [overlay, setOverlay] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState("login");
 
   const PATH_TITLES = {
     "/fo/stocks":         "F&O Stocks",
@@ -47,7 +48,7 @@ function Layout({ user, onLogout }) {
     return () => { delete window.__setOverlay; };
   }, []);
 
-  const fetchedAt = useRef({}); // resets on every page reload (new component mount)
+  const fetchedAt = useRef({});
   const [activeFilter, setActiveFilter] = useState("global");
   const [openPage, setOpenPage]         = useState(null);
   const [activeStock, setActiveStock]   = useState(null);
@@ -61,12 +62,10 @@ function Layout({ user, onLogout }) {
     return () => window.removeEventListener("resize", h);
   }, []);
 
-  // ── Boot: load watchlist from backend DB (persists across refreshes) ──
   useEffect(() => {
     async function bootStocks() {
       let symbolsToLoad = DEFAULT_SYMBOLS;
 
-      // If logged in, load from backend DB
       if (user?.token) {
         try {
           const res  = await fetch(`${BACKEND}/auth/watchlist`, {
@@ -78,7 +77,6 @@ function Layout({ user, onLogout }) {
           }
         } catch {}
       } else {
-        // Not logged in — fall back to localStorage
         try {
           const saved = localStorage.getItem(`sp_tracked_guest`);
           if (saved) symbolsToLoad = JSON.parse(saved);
@@ -106,11 +104,8 @@ function Layout({ user, onLogout }) {
       }
       if (loaded.length > 0) {
         setTrackedStocks(loaded);
-        // On every page load/reload: fetch fresh news for ALL tracked stocks
-        // fetchedAt is a useRef so it resets to {} on every mount (page load/reload)
-        // This means reload always triggers fresh fetches regardless of 5-min cache
         for (const s of loaded) {
-          fetchedAt.current[s.symbol] = Date.now(); // mark as fetched to prevent duplicate on click
+          fetchedAt.current[s.symbol] = Date.now();
           fetch(`${BACKEND}/news/fetch-stock`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -122,18 +117,14 @@ function Layout({ user, onLogout }) {
     bootStocks();
   }, [user?.token]);
 
-  // ── Live price refresh from backend ─────────────────────────────────
   const refreshPrices = useCallback(async () => {
     if (trackedStocks.length === 0) return;
     try {
       const res  = await fetch(`${BACKEND}/stocks`);
       const data = await res.json();
       if (!data.success || !data.data?.length) return;
-
-      // Build a map of symbol -> live data
       const liveMap = {};
       data.data.forEach(s => { liveMap[s.symbol] = s; });
-
       setTrackedStocks(prev => prev.map(stock => {
         const live = liveMap[stock.symbol];
         if (!live || !live.price) return stock;
@@ -145,19 +136,15 @@ function Layout({ user, onLogout }) {
           change_pct: live.change_pct,
         };
       }));
-    } catch {
-      // silently fail — keep showing last known prices
-    }
+    } catch {}
   }, [trackedStocks.length]);
 
-  // Refresh on mount and every 30s
   useEffect(() => {
     refreshPrices();
     const interval = setInterval(refreshPrices, PRICE_REFRESH);
     return () => clearInterval(interval);
   }, [refreshPrices]);
 
-  // ── Persist to localStorage for guests only ──────────────────────────
   useEffect(() => {
     if (user?.token || trackedStocks.length === 0) return;
     try {
@@ -165,15 +152,20 @@ function Layout({ user, onLogout }) {
     } catch {}
   }, [trackedStocks, user?.token]);
 
-  // ── Add stock to tracked list ────────────────────────────────────────
   const addTracked = useCallback(async (stockOrSymbol) => {
+    // ── Require login to add to watchlist ──
+    if (!user) {
+      setLoginModalMode("login");
+      setShowLoginModal(true);
+      return;
+    }
+
     let stock = typeof stockOrSymbol === "string"
       ? { symbol: stockOrSymbol, name: stockOrSymbol }
       : stockOrSymbol;
 
     if (!stock?.symbol) return;
 
-    // Fetch live data from backend
     try {
       const res  = await fetch(`${BACKEND}/stocks/${stock.symbol}`);
       const data = await res.json();
@@ -196,7 +188,6 @@ function Layout({ user, onLogout }) {
       return [...prev, stock];
     });
 
-    // Save to backend DB if logged in
     if (user?.token) {
       try {
         await fetch(`${BACKEND}/auth/watchlist`, {
@@ -209,17 +200,13 @@ function Layout({ user, onLogout }) {
 
     setActiveFilter(stock.symbol);
     setActiveStock(stock);
-
-    // ⚡ Instantly trigger background news fetch for this stock
     triggerInstantFetch(stock.symbol, stock.name);
+  }, [user]);
 
-  }, [user?.token]);
-
-  // ── Trigger instant news fetch — max once per 5 minutes ─────────────
   function triggerInstantFetch(symbol, name) {
-    const CACHE_MS = 5 * 60 * 1000; // 5 minutes
+    const CACHE_MS = 5 * 60 * 1000;
     const last = fetchedAt.current[symbol] || 0;
-    if (Date.now() - last < CACHE_MS) return; // already fetched recently
+    if (Date.now() - last < CACHE_MS) return;
     fetchedAt.current[symbol] = Date.now();
     fetch(`${BACKEND}/news/fetch-stock`, {
       method: "POST",
@@ -231,8 +218,6 @@ function Layout({ user, onLogout }) {
   const removeTracked = async (symbol) => {
     setTrackedStocks(prev => prev.filter(s => s.symbol !== symbol));
     if (activeFilter === symbol) setActiveFilter("global");
-
-    // Remove from backend DB if logged in
     if (user?.token) {
       try {
         await fetch(`${BACKEND}/auth/watchlist/${symbol}`, {
@@ -254,19 +239,22 @@ function Layout({ user, onLogout }) {
     }
   };
 
-  // Expose __setActiveFilter so CategoryFeedPage can restore category on dashboard close
   useEffect(() => {
     window.__setActiveFilter = (filter) => handleFilterChange(filter);
     return () => { delete window.__setActiveFilter; };
   });
 
-  // If dashboard is open and user selects another stock → open that stock's dashboard
   const handleStockSelectWithDashboard = (symbol, company) => {
     if (window.__isDashboardOpen && window.__isDashboardOpen()) {
       window.__openDashboard && window.__openDashboard(symbol, company);
     } else {
       handleFilterChange(symbol);
     }
+  };
+
+  const openLoginModal = (mode = "login") => {
+    setLoginModalMode(mode);
+    setShowLoginModal(true);
   };
 
   return (
@@ -293,57 +281,84 @@ function Layout({ user, onLogout }) {
         >
           <span style={{
             fontFamily: "var(--font-headline)",
-            fontWeight: 900,
-            fontSize: 28,
-            letterSpacing: "-0.03em",
-            color: "var(--text)",
-            fontStyle: "italic",
-            lineHeight: 1,
-            userSelect: "none",
+            fontWeight: 900, fontSize: 28,
+            letterSpacing: "-0.03em", color: "var(--text)",
+            fontStyle: "italic", lineHeight: 1, userSelect: "none",
           }}>
             Gramble
           </span>
         </div>
 
         {!isMobile && <SearchBar onAddTracked={addTracked} onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)} />}
-
-        {/* Nav tabs */}
         {!isMobile && <NavTabs />}
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           {isMobile && <SearchBar onAddTracked={addTracked} onSelectStock={(stock) => handleStockSelectWithDashboard(stock.symbol, stock.name || stock.symbol)} />}
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: "linear-gradient(135deg, var(--accent), #0066cc)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: "var(--font-display)", fontWeight: 800, color: "#000", fontSize: 12, flexShrink: 0,
-            }}>
-              {user.initials}
+
+          {/* ── Profile area: logged in vs logged out ── */}
+          {user ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "linear-gradient(135deg, var(--accent), #0066cc)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "var(--font-display)", fontWeight: 800, color: "#000", fontSize: 12, flexShrink: 0,
+              }}>
+                {user.initials}
+              </div>
+              {!isMobile && (
+                <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
+                  {user.name}
+                </span>
+              )}
+              <button onClick={onLogout} style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "7px 12px", borderRadius: 8, background: "transparent",
+                border: "1px solid var(--border2)", color: "var(--text3)",
+                cursor: "pointer", fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 600,
+                transition: "all 0.2s",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--bear)"; e.currentTarget.style.color = "var(--bear)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                {!isMobile && "Logout"}
+              </button>
             </div>
-            {!isMobile && (
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
-                {user.name}
-              </span>
-            )}
-          </div>
-          <button onClick={onLogout} style={{
-            display: "flex", alignItems: "center", gap: 5,
-            padding: "7px 12px", borderRadius: 8, background: "transparent",
-            border: "1px solid var(--border2)", color: "var(--text3)",
-            cursor: "pointer", fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 600,
-            transition: "all 0.2s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--bear)"; e.currentTarget.style.color = "var(--bear)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            {!isMobile && "Logout"}
-          </button>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button
+                onClick={() => openLoginModal("login")}
+                style={{
+                  padding: "7px 14px", borderRadius: 8, border: "1px solid var(--border2)",
+                  background: "transparent", color: "var(--text2)",
+                  fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 12,
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--text)"; e.currentTarget.style.color = "var(--text)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text2)"; }}
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => openLoginModal("signup")}
+                style={{
+                  padding: "7px 14px", borderRadius: 8, border: "none",
+                  background: "var(--accent)", color: "#000",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -361,16 +376,10 @@ function Layout({ user, onLogout }) {
 
       <div style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0, gap: 0 }}>
         {!isMobile && !isDetail && (
-          <div style={{
-            width: 340, flexShrink: 0,
-            padding: "16px 0 16px 16px",
-            display: "flex", flexDirection: "column",
-          }}>
+          <div style={{ width: 340, flexShrink: 0, padding: "16px 0 16px 16px", display: "flex", flexDirection: "column" }}>
             <div style={{
-              flex: 1, borderRadius: 18,
-              border: "1px solid var(--border2)",
-              background: "var(--bg)",
-              overflow: "hidden",
+              flex: 1, borderRadius: 18, border: "1px solid var(--border2)",
+              background: "var(--bg)", overflow: "hidden",
               display: "flex", flexDirection: "column",
               boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             }}>
@@ -397,33 +406,25 @@ function Layout({ user, onLogout }) {
                 onTrack={addTracked}
                 trackedSymbols={trackedSymbols}
                 onGoGlobal={() => {
-                  // If CategoryFeedPage registered a back override (stock clicked from category),
-                  // use that instead of going to global feed
                   if (window.__dashboardBackOverride) {
                     window.__dashboardBackOverride();
                   } else {
                     handleFilterChange("global");
                   }
                 }}
-                onSwitchToStock={(sym, name) => handleFilterChange(sym)}
+                onSwitchToStock={(sym) => handleFilterChange(sym)}
               />
             } />
-            <Route path="/news/:id"     element={<NewsDetailPage />} />
+            <Route path="/news/:id"      element={<NewsDetailPage />} />
             <Route path="/stock/:symbol" element={<NewsDetailPage />} />
           </Routes>
         </main>
 
         {!isMobile && !isDetail && (
-          <div style={{
-            width: 360, flexShrink: 0,
-            padding: "16px 16px 16px 0",
-            display: "flex", flexDirection: "column",
-          }}>
+          <div style={{ width: 360, flexShrink: 0, padding: "16px 16px 16px 0", display: "flex", flexDirection: "column" }}>
             <div style={{
-              flex: 1, borderRadius: 18,
-              border: "1px solid var(--border2)",
-              background: "var(--bg)",
-              overflow: "hidden",
+              flex: 1, borderRadius: 18, border: "1px solid var(--border2)",
+              background: "var(--bg)", overflow: "hidden",
               display: "flex", flexDirection: "column",
               boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
             }}>
@@ -439,44 +440,70 @@ function Layout({ user, onLogout }) {
       {overlay && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 500,
-          background: "var(--bg)",
-          animation: "fadeIn 0.15s ease",
-          display: "flex", flexDirection: "column",
-          overflow: "hidden",
+          background: "var(--bg)", animation: "fadeIn 0.15s ease",
+          display: "flex", flexDirection: "column", overflow: "hidden",
         }}>
-          {/* Sticky top bar */}
           <div style={{
-            flexShrink: 0,
-            borderBottom: "1px solid var(--border)",
+            flexShrink: 0, borderBottom: "1px solid var(--border)",
             padding: "13px 24px", display: "flex", alignItems: "center", gap: 14,
-            background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
-            zIndex: 10,
+            background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", zIndex: 10,
           }}>
             <button onClick={() => setOverlay(null)}
               style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "var(--text3)", padding: 0 }}>
               ←
             </button>
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>
-              {overlay.title}
-            </span>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15 }}>{overlay.title}</span>
             <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text3)", fontFamily: "var(--font-display)" }}>
               Live · refreshes every 5 min
             </span>
           </div>
-
-          {/* Page content — flex:1 + overflow:hidden so the page owns its scroll */}
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {overlay.path === "/fo/stocks"          && <FOStocksPage />}
             {overlay.path === "/fo/commodities"     && <CommoditiesPage />}
             {overlay.path === "/screener/intraday"  && <IntradayScreenerPage />}
             {overlay.path === "/screener/etf"       && <ETFScreenerPage />}
-            {overlay.path === "/screener/indices"   && <IndicesScreenerPage />}  {/* ← CHANGED */}
+            {overlay.path === "/screener/indices"   && <IndicesScreenerPage />}
             {overlay.path === "/mf/screener"        && <MutualFundsPage type="screener" />}
             {overlay.path === "/mf/compare"         && <MutualFundsPage type="compare" />}
             {overlay.path === "/more/ipo"           && <MorePage type="ipo" />}
             {overlay.path === "/more/etfs"          && <MorePage type="etfs" />}
             {overlay.path === "/more/bonds"         && <MorePage type="bonds" />}
             {overlay.path === "/more/crypto"        && <MorePage type="crypto" />}
+          </div>
+        </div>
+      )}
+
+      {/* ── Login modal ── */}
+      {showLoginModal && (
+        <div
+          onClick={() => setShowLoginModal(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, position: "relative" }}>
+            {/* Close button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              style={{
+                position: "absolute", top: -14, right: -14, zIndex: 10,
+                width: 32, height: 32, borderRadius: "50%",
+                background: "#fff", border: "1px solid var(--border2)",
+                cursor: "pointer", fontSize: 16, color: "var(--text3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+              }}
+            >✕</button>
+            <LoginPage
+              initialMode={loginModalMode}
+              onLogin={(u) => {
+                onLogin(u);
+                setShowLoginModal(false);
+              }}
+            />
           </div>
         </div>
       )}
@@ -557,9 +584,7 @@ function NavTabs() {
           >
             {tab.label}
             {tab.sub && (
-              <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>
-                {tab.sub}
-              </span>
+              <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>{tab.sub}</span>
             )}
             <span style={{
               fontSize: 8, color: "var(--text3)", marginLeft: 2,
@@ -605,17 +630,32 @@ function NavTabs() {
 
 export default function App() {
   const [user, setUser] = useState(null);
+
+  // On first load, check for saved token
+  useEffect(() => {
+    const saved = localStorage.getItem("sp_token");
+    if (!saved) return;
+    const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
+    fetch(`${API}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: saved }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.success) setUser({ ...data.user, token: saved }); })
+      .catch(() => localStorage.removeItem("sp_token"));
+  }, []);
+
+  const handleLogin = (u) => setUser(u);
   const handleLogout = () => {
     localStorage.removeItem("sp_token");
     setUser(null);
   };
+
   return (
     <BrowserRouter>
       <NavigateInjector />
-      {user === null
-        ? <LoginPage onLogin={setUser} />
-        : <Layout user={user} onLogout={handleLogout} />
-      }
+      <Layout user={user} onLogin={handleLogin} onLogout={handleLogout} />
     </BrowserRouter>
   );
 }
