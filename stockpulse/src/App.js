@@ -21,6 +21,11 @@ import LoginPage         from "./pages/LoginPage";
 const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
+// ── Gramble brand sky-blue (matched from gramble.in logo)
+const GRAMBLE_BLUE     = "#6AAFE6";
+const GRAMBLE_BLUE_BG  = "#EAF4FC";   // very light tint for selected state
+const GRAMBLE_BLUE_MID = "#5BA3DD";   // slightly deeper for borders/hover
+
 const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
 function Layout({ user, onLogin, onLogout }) {
@@ -300,9 +305,9 @@ function Layout({ user, onLogin, onLogout }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{
                 width: 34, height: 34, borderRadius: 10,
-                background: "linear-gradient(135deg, var(--accent), #0066cc)",
+                background: `linear-gradient(135deg, ${GRAMBLE_BLUE}, ${GRAMBLE_BLUE_MID})`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "var(--font-display)", fontWeight: 800, color: "#000", fontSize: 12, flexShrink: 0,
+                fontFamily: "var(--font-display)", fontWeight: 800, color: "#fff", fontSize: 12, flexShrink: 0,
               }}>
                 {user.initials}
               </div>
@@ -330,34 +335,36 @@ function Layout({ user, onLogin, onLogout }) {
               </button>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button
-                onClick={() => openLoginModal("login")}
-                style={{
-                  padding: "7px 14px", borderRadius: 8, border: "1px solid var(--border2)",
-                  background: "transparent", color: "var(--text2)",
-                  fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 12,
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--text)"; e.currentTarget.style.color = "var(--text)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text2)"; }}
-              >
-                Log In
-              </button>
-              <button
-                onClick={() => openLoginModal("signup")}
-                style={{
-                  padding: "7px 14px", borderRadius: 8, border: "none",
-                  background: "var(--accent)", color: "#000",
-                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = "0.85"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-              >
-                Sign Up
-              </button>
-            </div>
+            // ── Single "Account" button – opens modal with Login / Sign Up tabs inside ──
+            <button
+              onClick={() => openLoginModal("login")}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "7px 14px", borderRadius: 8,
+                border: `1.5px solid ${GRAMBLE_BLUE}`,
+                background: GRAMBLE_BLUE_BG,
+                color: GRAMBLE_BLUE_MID,
+                fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12,
+                cursor: "pointer", transition: "all 0.2s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = GRAMBLE_BLUE;
+                e.currentTarget.style.color = "#fff";
+                e.currentTarget.style.borderColor = GRAMBLE_BLUE;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = GRAMBLE_BLUE_BG;
+                e.currentTarget.style.color = GRAMBLE_BLUE_MID;
+                e.currentTarget.style.borderColor = GRAMBLE_BLUE;
+              }}
+            >
+              {/* Person icon */}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Account
+            </button>
           )}
         </div>
       </header>
@@ -473,37 +480,89 @@ function Layout({ user, onLogin, onLogout }) {
         </div>
       )}
 
-      {/* ── Login modal ── */}
+      {/* ── Login / Sign-Up modal ── */}
       {showLoginModal && (
         <div
           onClick={() => setShowLoginModal(false)}
           style={{
             position: "fixed", inset: 0, zIndex: 1000,
-            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)",
+            background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 20,
           }}
         >
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, position: "relative" }}>
+          {/* ── Square compact card with Gramble-blue accent ── */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: "relative",
+              width: 360, height: 360,          /* square */
+              borderRadius: 16,
+              background: "#fff",
+              border: `2px solid ${GRAMBLE_BLUE}`,
+              boxShadow: `0 8px 40px rgba(106,175,230,0.25), 0 2px 12px rgba(0,0,0,0.10)`,
+              overflow: "hidden",
+              display: "flex", flexDirection: "column",
+            }}
+          >
+            {/* Blue top stripe */}
+            <div style={{
+              height: 5, flexShrink: 0,
+              background: `linear-gradient(90deg, ${GRAMBLE_BLUE}, ${GRAMBLE_BLUE_MID})`,
+            }} />
+
             {/* Close button */}
             <button
               onClick={() => setShowLoginModal(false)}
               style={{
-                position: "absolute", top: -14, right: -14, zIndex: 10,
-                width: 32, height: 32, borderRadius: "50%",
-                background: "#fff", border: "1px solid var(--border2)",
-                cursor: "pointer", fontSize: 16, color: "var(--text3)",
+                position: "absolute", top: 14, right: 14, zIndex: 10,
+                width: 26, height: 26, borderRadius: "50%",
+                background: GRAMBLE_BLUE_BG,
+                border: `1px solid ${GRAMBLE_BLUE}`,
+                cursor: "pointer", fontSize: 13, color: GRAMBLE_BLUE_MID,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                lineHeight: 1,
               }}
             >✕</button>
-            <LoginPage
-              initialMode={loginModalMode}
-              onLogin={(u) => {
-                onLogin(u);
-                setShowLoginModal(false);
-              }}
-            />
+
+            {/* ── Tab switcher: Log In / Sign Up ── */}
+            <div style={{
+              flexShrink: 0,
+              display: "flex",
+              borderBottom: `1px solid ${GRAMBLE_BLUE}22`,
+              margin: "10px 20px 0",
+              gap: 4,
+            }}>
+              {["login", "signup"].map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setLoginModalMode(mode)}
+                  style={{
+                    flex: 1, padding: "8px 0",
+                    border: "none", borderRadius: "6px 6px 0 0",
+                    cursor: "pointer", transition: "all 0.15s",
+                    fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5,
+                    background: loginModalMode === mode ? GRAMBLE_BLUE : "transparent",
+                    color: loginModalMode === mode ? "#fff" : GRAMBLE_BLUE_MID,
+                    borderBottom: loginModalMode === mode ? `2px solid ${GRAMBLE_BLUE}` : "2px solid transparent",
+                  }}
+                >
+                  {mode === "login" ? "Log In" : "Sign Up"}
+                </button>
+              ))}
+            </div>
+
+            {/* LoginPage fills the rest */}
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+              <LoginPage
+                initialMode={loginModalMode}
+                onLogin={(u) => {
+                  onLogin(u);
+                  setShowLoginModal(false);
+                }}
+                compact={true}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -566,64 +625,78 @@ function NavTabs() {
 
   return (
     <div ref={ref} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-      {NAV_TABS.map((tab) => (
-        <div key={tab.label} style={{ position: "relative" }}>
-          <button
-            onClick={() => setOpen(open === tab.label ? null : tab.label)}
-            style={{
-              display: "flex", alignItems: "center", gap: 3,
-              padding: "6px 11px", borderRadius: 7, border: "none",
-              background: open === tab.label ? "var(--bg3)" : "transparent",
-              cursor: "pointer", transition: "background 0.15s",
-              fontFamily: "var(--font-display)", fontWeight: 600,
-              fontSize: 12.5, color: open === tab.label ? "var(--text)" : "var(--text2)",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={e => { if (open !== tab.label) e.currentTarget.style.background = "var(--bg3)"; }}
-            onMouseLeave={e => { if (open !== tab.label) e.currentTarget.style.background = "transparent"; }}
-          >
-            {tab.label}
-            {tab.sub && (
-              <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>{tab.sub}</span>
-            )}
-            <span style={{
-              fontSize: 8, color: "var(--text3)", marginLeft: 2,
-              transform: open === tab.label ? "rotate(180deg)" : "none",
-              transition: "transform 0.15s", display: "inline-block",
-            }}>▼</span>
-          </button>
+      {NAV_TABS.map((tab) => {
+        const isActive = open === tab.label;
+        return (
+          <div key={tab.label} style={{ position: "relative" }}>
+            <button
+              onClick={() => setOpen(isActive ? null : tab.label)}
+              style={{
+                display: "flex", alignItems: "center", gap: 3,
+                padding: "6px 11px", borderRadius: 7, border: "none",
+                // ── CHANGE: sky-blue tint when selected instead of dark bg ──
+                background: isActive ? GRAMBLE_BLUE_BG : "transparent",
+                cursor: "pointer", transition: "background 0.15s",
+                fontFamily: "var(--font-display)", fontWeight: 600,
+                fontSize: 12.5,
+                // ── CHANGE: Gramble blue text when active ──
+                color: isActive ? GRAMBLE_BLUE_MID : "var(--text2)",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={e => {
+                if (!isActive) e.currentTarget.style.background = GRAMBLE_BLUE_BG;
+                if (!isActive) e.currentTarget.style.color = GRAMBLE_BLUE_MID;
+              }}
+              onMouseLeave={e => {
+                if (!isActive) e.currentTarget.style.background = "transparent";
+                if (!isActive) e.currentTarget.style.color = "var(--text2)";
+              }}
+            >
+              {tab.label}
+              {tab.sub && (
+                <span style={{ fontSize: 9, color: "var(--text3)", fontWeight: 500, marginLeft: 1 }}>{tab.sub}</span>
+              )}
+              <span style={{
+                fontSize: 8,
+                color: isActive ? GRAMBLE_BLUE_MID : "var(--text3)",
+                marginLeft: 2,
+                transform: isActive ? "rotate(180deg)" : "none",
+                transition: "transform 0.15s", display: "inline-block",
+              }}>▼</span>
+            </button>
 
-          {open === tab.label && (
-            <div style={{
-              position: "absolute", top: "calc(100% + 6px)", left: 0,
-              background: "#fff", border: "1px solid var(--border)",
-              borderRadius: 9, boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
-              zIndex: 999, minWidth: 180, overflow: "hidden",
-              animation: "fadeInFast 0.15s ease",
-            }}>
-              {tab.items.map((item, i) => (
-                <div
-                  key={item.label}
-                  onClick={() => { setOpen(null); doNav(item.path); }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 14px",
-                    borderBottom: i < tab.items.length - 1 ? "1px solid var(--border)" : "none",
-                    cursor: "pointer", transition: "background 0.1s",
-                    fontFamily: "var(--font-display)", fontWeight: 600,
-                    fontSize: 12.5, color: "var(--text2)",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "var(--bg3)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                >
-                  <span style={{ fontSize: 14 }}>{item.icon}</span>
-                  {item.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
+            {isActive && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 6px)", left: 0,
+                background: "#fff", border: "1px solid var(--border)",
+                borderRadius: 9, boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
+                zIndex: 999, minWidth: 180, overflow: "hidden",
+                animation: "fadeInFast 0.15s ease",
+              }}>
+                {tab.items.map((item, i) => (
+                  <div
+                    key={item.label}
+                    onClick={() => { setOpen(null); doNav(item.path); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 14px",
+                      borderBottom: i < tab.items.length - 1 ? "1px solid var(--border)" : "none",
+                      cursor: "pointer", transition: "background 0.1s",
+                      fontFamily: "var(--font-display)", fontWeight: 600,
+                      fontSize: 12.5, color: "var(--text2)",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = GRAMBLE_BLUE_BG}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <span style={{ fontSize: 14 }}>{item.icon}</span>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
