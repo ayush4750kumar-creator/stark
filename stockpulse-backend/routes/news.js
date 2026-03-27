@@ -104,7 +104,7 @@ router.get("/:id/fetch", async (req, res) => {
 });
 
 // ── GET /api/news/:id — single article ───────────────────────
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     const article = await db().prepare(`
       SELECT
