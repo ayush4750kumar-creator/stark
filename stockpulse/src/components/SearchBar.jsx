@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const BACKEND = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const BACKEND = "https://stark-production-4b5e.up.railway.app/api";
 
 const POPULAR = [
   { symbol: "RELIANCE",   name: "Reliance Industries",       exchange: "NSE",    sector: "Energy" },
