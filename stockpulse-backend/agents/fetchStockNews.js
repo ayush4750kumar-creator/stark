@@ -37,8 +37,8 @@ function saveArticle(a) {
     db().prepare(`
       INSERT INTO articles
         (uuid,symbol,company,headline,full_text,source,source_url,image_url,published_at,agent_source)
-      VALUES(@uuid,@symbol,@company,@headline,@full_text,@source,@source_url,@image_url,@published_at,@agent_source)
-    `).run(a);
+      VALUES(?,?,?,?,?,?,?,?,?,?)
+    `).run([a.uuid, a.symbol, a.company, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.agent_source]);
     return true;
   } catch(e) { return false; }
 }

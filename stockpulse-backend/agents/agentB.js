@@ -47,9 +47,8 @@ function saveArticle(article) {
     const info = db().prepare(`
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
-      VALUES
-        (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB')
-    `).run(article);
+      VALUES (?,?,?,?,?,?,?,?,?,'agentB')
+    `).run([article.uuid, article.symbol, article.company, article.headline, article.full_text, article.source, article.source_url, article.image_url, article.published_at]);
     return info.changes > 0;
   } catch (err) {
     console.error("AgentB DB error:", err.message);
