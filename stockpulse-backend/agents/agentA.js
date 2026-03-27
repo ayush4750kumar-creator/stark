@@ -48,7 +48,7 @@ function saveArticle(article) {
       VALUES (?,?,?,?,?,?,?,?,?,'agentA')
     `).run([article.uuid, article.symbol, article.company, article.headline, article.full_text, article.source, article.source_url, article.image_url, article.published_at]);
     return info.changes > 0;
-  } catch (err) { console.error("AgentA DB error:", err.message); return false; }
+  } catch(err) { console.error("AgentA FULL error:", err); return false; }
 }
 
 function detectStock(text) {

@@ -40,7 +40,7 @@ function saveArticle(a) {
       VALUES(?,?,?,?,?,?,?,?,?,?)
     `).run([a.uuid, a.symbol, a.company, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.agent_source]);
     return true;
-  } catch(e) { return false; }
+  } catch(e) { console.error("saveArticle error:", e.message); return false; }
 }
 
 function img(item) {
