@@ -253,7 +253,7 @@ router.get("/:symbol/news", (req, res) => {
       WHERE symbol = ?
         AND published_at::timestamptz >= NOW() - INTERVAL '15 days'
         AND headline IS NOT NULL AND length(headline) > 10
-      GROUP BY headline
+      
       ORDER BY published_at DESC LIMIT ?
     `).all(symbol, limit);
     res.json({ success: true, data: news, symbol });

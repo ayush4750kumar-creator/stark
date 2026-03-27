@@ -29,7 +29,7 @@ router.get("/", (req, res) => {
       FROM articles a
       LEFT JOIN stocks s ON a.symbol = s.symbol
       ${where}
-      GROUP BY a.headline
+      
       ORDER BY a.published_at DESC
       LIMIT ? OFFSET ?
     `).all([...params, limit, offset]);
