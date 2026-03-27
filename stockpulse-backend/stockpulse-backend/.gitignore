@@ -1,0 +1,8 @@
+database/
+database/*.db
+database/*.db-shm
+database/*.db-wal
+../database/*.db
+../database/*.db-shm
+../database/*.db-wal
+../server.log
