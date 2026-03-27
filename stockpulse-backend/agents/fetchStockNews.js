@@ -32,9 +32,9 @@ const rss = new RSSParser({
   customFields: { item: ["media:content", "media:thumbnail", "enclosure"] },
 });
 
-function saveArticle(a) {
+async function saveArticle(a) {
   try {
-    db().prepare(`
+    await db().prepare(`
       INSERT INTO articles
         (uuid,symbol,company,headline,full_text,source,source_url,image_url,published_at,agent_source)
       VALUES(?,?,?,?,?,?,?,?,?,?)

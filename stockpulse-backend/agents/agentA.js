@@ -40,9 +40,9 @@ function isJunk(headline) {
   return JUNK_PATTERNS.some(p => p.test(headline));
 }
 
-function saveArticle(article) {
+async function saveArticle(article) {
   try {
-    const info = db().prepare(`
+    const info = await db().prepare(`
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES (?,?,?,?,?,?,?,?,?,'agentA')
