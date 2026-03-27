@@ -20,7 +20,7 @@ router.get("/", (req, res) => {
     if (symbol)    { where += " AND a.symbol = ?";    params.push(symbol.toUpperCase()); }
     if (sentiment) { where += " AND a.sentiment = ?"; params.push(sentiment); }
 
-    const articles = db().prepare(`
+    const articles = await db().prepare(`
       SELECT
         a.id, a.uuid, a.symbol, a.company, a.headline,
         a.summary_20, a.source, a.source_url, a.image_url,
@@ -34,7 +34,7 @@ router.get("/", (req, res) => {
       LIMIT ? OFFSET ?
     `).all([...params, limit, offset]);
 
-    const total = db().prepare(
+    const total = await db().prepare(
       `SELECT COUNT(*) as count FROM articles a ${where}`
     ).get(params)?.count || 0;
 
@@ -49,7 +49,7 @@ router.get("/", (req, res) => {
 // ── GET /api/news/:id/fetch — MUST be before /:id ────────────
 router.get("/:id/fetch", async (req, res) => {
   try {
-    const row = db().prepare(
+    const row = await db().prepare(
       "SELECT source_url, headline, full_text FROM articles WHERE id = ?"
     ).get(req.params.id);
 
@@ -98,7 +98,7 @@ router.get("/:id/fetch", async (req, res) => {
     const content = paras.slice(0, 10).join("\n\n");
     res.json({ success: true, content: content || row.full_text || "" });
   } catch (err) {
-    const row = db().prepare("SELECT full_text, headline FROM articles WHERE id = ?").get(req.params.id);
+    const row = await db().prepare("SELECT full_text, headline FROM articles WHERE id = ?").get(req.params.id);
     res.json({ success: true, content: row?.full_text || row?.headline || "" });
   }
 });
@@ -106,7 +106,7 @@ router.get("/:id/fetch", async (req, res) => {
 // ── GET /api/news/:id — single article ───────────────────────
 router.get("/:id", (req, res) => {
   try {
-    const article = db().prepare(`
+    const article = await db().prepare(`
       SELECT
         a.*,
         s.price, s.change_amt, s.change_pct,
@@ -126,7 +126,7 @@ router.get("/:id", (req, res) => {
     // Related: same symbol first, then recent
     let related = [];
     if (article.symbol) {
-      related = db().prepare(`
+      related = await db().prepare(`
         SELECT id, headline, summary_20, sentiment, published_at, source, image_url
         FROM articles
         WHERE symbol = ? AND id != ? AND processed = 2
@@ -137,7 +137,7 @@ router.get("/:id", (req, res) => {
       const exclude = [article.id, ...related.map(r => r.id)];
       const ph = exclude.map(() => "?").join(",");
       const fillCount = 8 - related.length;
-      const more = db().prepare(`
+      const more = await db().prepare(`
         SELECT id, headline, summary_20, sentiment, published_at, source, image_url
         FROM articles WHERE id NOT IN (${ph}) AND processed = 2
         ORDER BY published_at DESC LIMIT ?

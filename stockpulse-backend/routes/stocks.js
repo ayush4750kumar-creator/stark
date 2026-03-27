@@ -16,7 +16,7 @@ let pricesLoaded = false;
 
 async function ensurePrices() {
   if (pricesLoaded) return;
-  const count = db().prepare("SELECT COUNT(*) as c FROM stocks WHERE price IS NOT NULL").get()?.c || 0;
+  const count = await db().prepare("SELECT COUNT(*) as c FROM stocks WHERE price IS NOT NULL").get()?.c || 0;
   if (count > 0) { pricesLoaded = true; return; }
   await refreshAllPrices();
   pricesLoaded = true;
@@ -29,7 +29,7 @@ router.get("/", async (req, res) => {
       ensurePrices().catch(() => {});
     }
 
-    let stocks = db().prepare("SELECT * FROM stocks ORDER BY symbol").all();
+    let stocks = await db().prepare("SELECT * FROM stocks ORDER BY symbol").all();
 
     if (stocks.length === 0) {
       stocks = ALL_STOCKS.map(s => ({
@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
 // ── GET /api/stocks/trending ─────────────────────────────────────
 router.get("/trending", (req, res) => {
   try {
-    let trending = db().prepare(`
+    let trending = await db().prepare(`
       SELECT s.*, COUNT(a.id) as news_count
       FROM stocks s
       LEFT JOIN articles a ON s.symbol = a.symbol
@@ -84,7 +84,7 @@ router.get("/search", async (req, res) => {
 
   const qUp = q.toUpperCase();
 
-  const dbResults = db().prepare(`
+  const dbResults = await db().prepare(`
     SELECT symbol, name, sector, yahoo_symbol, price, change_pct
     FROM stocks
     WHERE symbol LIKE ? OR symbol = ? OR UPPER(name) LIKE ?
@@ -118,7 +118,7 @@ router.get("/search", async (req, res) => {
     const quotes = (j.quotes || []).filter(x => x.quoteType === "EQUITY" || x.quoteType === "ETF");
 
     if (quotes.length) {
-      const insertStmt = db().prepare("INSERT INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?)");
+      const insertStmt = await db().prepare("INSERT INTO stocks (symbol, name, sector, yahoo_symbol) VALUES (?,?,?,?)");
       for (const q of quotes.slice(0, 10)) {
         const sym = (q.symbol || "").replace(/\.(NS|BO)$/, "");
         insertStmt.run(sym, q.longname || q.shortname || sym, q.sector || q.industry || "Stock", q.symbol);
@@ -161,7 +161,7 @@ router.get("/search", async (req, res) => {
     return res.json({ success: true, data: combined.slice(0,12) });
   } catch {
     try {
-      const local = db().prepare(
+      const local = await db().prepare(
         "SELECT symbol, name, sector, price, change_pct FROM stocks WHERE symbol LIKE ? OR UPPER(name) LIKE ? LIMIT 10"
       ).all(`${qUp}%`, `%${qUp}%`);
       res.json({ success: true, data: local });
@@ -197,7 +197,7 @@ router.get("/:symbol", async (req, res) => {
       return res.json({ success: true, data: { symbol, name: config?.name||symbol, sector: config?.sector||"Stock", ...live }});
     }
 
-    const cached = db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
+    const cached = await db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
     if (cached?.price) return res.json({ success: true, data: cached, source: "cache" });
 
     const fund = await getFundamentals(symbol);
@@ -218,7 +218,7 @@ router.get("/:symbol", async (req, res) => {
           fund.pe_ratio, fund.pb_ratio, fund.eps, fund.div_yield,
           fund.roe, fund.debt_equity, fund.book_value,
           fund.yahooSym, fund.name, symbol);
-      const saved = db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
+      const saved = await db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
       return res.json({ success: true, data: saved || { symbol, ...fund }, source: "live" });
     }
 
@@ -247,7 +247,7 @@ router.get("/:symbol/news", (req, res) => {
   try {
     const symbol = req.params.symbol.toUpperCase();
     const limit  = parseInt(req.query.limit) || 20;
-    const news   = db().prepare(`
+    const news   = await db().prepare(`
       SELECT id, headline, summary_20, summary_long, sentiment, source, source_url, image_url, published_at, full_text
       FROM articles
       WHERE symbol = ?
@@ -267,7 +267,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
   try {
     const symbol       = req.params.symbol.toUpperCase();
     const forceRefresh = req.query.force === "1";
-    const cached       = db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
+    const cached       = await db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
 
     // Serve cached fundamentals instantly if fresh
     if (!forceRefresh && (cached?.pe_ratio || cached?.eps || cached?.pb_ratio || cached?.book_value)) {
@@ -315,7 +315,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
                fund.volume??null, fund.week52_high??null, fund.week52_low??null,
                fund.market_cap??null, symbol);
       } catch {}
-      const fresh2 = db().prepare("SELECT * FROM stocks WHERE symbol=?").get(symbol);
+      const fresh2 = await db().prepare("SELECT * FROM stocks WHERE symbol=?").get(symbol);
       return res.json({ success: true, data: fresh2 || fund, source: "price_only" });
     }
 
@@ -363,7 +363,7 @@ router.get("/:symbol/fundamentals", async (req, res) => {
       console.error("  DB save error:", saveErr.message);
     }
 
-    const fresh = db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
+    const fresh = await db().prepare("SELECT * FROM stocks WHERE symbol = ?").get(symbol);
     res.json({ success: true, data: { ...fresh, ...fund }, source: "live", yahooSym: fund.yahooSym });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
