@@ -14,7 +14,7 @@ router.get("/", (req, res) => {
     const offset    = (page - 1) * limit;
 
     // Show all articles from last 30 days (processed or not)
-    let where    = "WHERE a.published_at >= NOW() - INTERVAL '30 days' AND a.headline IS NOT NULL AND length(a.headline) > 10";
+    let where    = "WHERE a.published_at::timestamptz >= NOW() - INTERVAL '30 days' AND a.headline IS NOT NULL AND length(a.headline) > 10";
     const params = [];
 
     if (symbol)    { where += " AND a.symbol = ?";    params.push(symbol.toUpperCase()); }
