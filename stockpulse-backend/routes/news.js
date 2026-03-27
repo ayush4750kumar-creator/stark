@@ -5,7 +5,7 @@ const { getDB } = require("../config/database");
 const db = () => getDB();
 
 // ── GET /api/news — paginated feed ───────────────────────────
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const page      = parseInt(req.query.page)  || 1;
     const limit     = parseInt(req.query.limit) || 20;
