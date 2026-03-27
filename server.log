@@ -1,0 +1,1049 @@
+✅ Database ready at: /Users/ayushkumar/Desktop/stark/stockpulse-backend/database/stockpulse.db
+
+══════════════════════════════════════════════════
+  Gramble Backend running!
+   API:      http://localhost:5000/api
+   Health:   http://localhost:5000/api/health
+   Auth:     http://localhost:5000/api/auth
+   News:     http://localhost:5000/api/news
+   Stocks:   http://localhost:5000/api/stocks
+   Fetch:    http://localhost:5000/api/fetch/category
+   Data:     http://localhost:5000/api/data
+   ETF:      http://localhost:5000/api/etf
+   Indices:  http://localhost:5000/api/indices
+   Logos:    http://localhost:5000/api/logos
+   Sidebar:  http://localhost:5000/api/sidebar
+══════════════════════════════════════════════════
+
+⏰ Scheduler started
+   Price refresh: every 2 min
+   News fetch:    every 5 min
+   AI pipeline:   run separately → py -3.11 agents/agentC_agentD.py --loop
+
+  🔥 DataAgent: Warming cache...
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 SidebarAgent: Fetching 89 symbols...
+  📊 ETFAgent: Fetching 131 ETFs...
+  📊 IndicesAgent: Fetching 25 indices...
+  ✅ IndicesAgent: 15/25 in 0.3s
+  ✅ ETFAgent: 123/131 in 1.7s
+  📊 ETFAgent: Fetching 131 ETFs...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 4:50:22 PM
+
+💹 Refreshing prices (parallel)...
+  ✓ DataAgent: Got 168/172 F&O stocks
+  ✅ SidebarAgent: 176/89 symbols in 2.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+
+══════════════════════════════════════════════════
+📰 NEWS FETCH: 3/27/2026, 4:50:23 PM
+══════════════════════════════════════════════════
+
+🌍 AgentA starting — fetching global market news...
+  ⚠ Reuters Business: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Reuters Companies: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Finnhub general: Request failed with status code 401
+  📊 SidebarAgent: Fetching 89 symbols...
+  📡 Yahoo per-stock: 80 articles
+  ✅ ETFAgent: 123/131 in 1.2s
+  ⚠ Finnhub forex: Request failed with status code 401
+  ⚠ Finnhub merger: Request failed with status code 401
+  📡 Finnhub: 0 articles
+  ✅ SidebarAgent: 176/89 symbols in 0.6s
+  🖼  LogoService: warming 28 logos...
+  ✅ LogoService: 23/28 logos cached
+  ⚠ Investing.com Stocks: Status code 404
+  ⚠ Barrons: Status code 403
+  🧠 Startup sentiment analysis...
+  📊 Sentiment: analyzing 200 articles...
+  ⚠ Zacks: Status code 404
+  ⚠ Forbes Investing: Status code 404
+  📡 RSS: 14/27 feeds live, 163 articles
+✅ AgentA done — 191 total, 191 new in 13.2s
+
+🇮🇳 AgentB starting — fetching Indian market news...
+  📡 RSS: Economic Times Markets — 15 items
+[0mGET /api/health [32m200[0m 3.039 ms - 95[0m
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for RELIANCE: Request failed with status code 400
+AgentB GNews error for TCS: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 RSS: NDTV Profit — 15 items
+  📡 RSS: LiveMint Markets — 15 items
+  📡 RSS: ET Prime Markets — 0 items
+AgentB GNews error for INFY: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for HDFCBANK: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 GNews broad India — 0 articles
+AgentB GNews error for ICICIBANK: Request failed with status code 400
+AgentB GNews error for WIPRO: Request failed with status code 400
+AgentB GNews error for BAJFINANCE: Request failed with status code 400
+AgentB GNews error for ADANIENT: Request failed with status code 400
+AgentB GNews error for SBIN: Request failed with status code 400
+AgentB GNews error for TATAMOTORS: Request failed with status code 400
+AgentB GNews error for MARUTI: Request failed with status code 400
+AgentB GNews error for SUNPHARMA: Request failed with status code 400
+AgentB GNews error for LTIM: Request failed with status code 400
+AgentB GNews error for AXISBANK: Request failed with status code 400
+AgentB GNews error for KOTAKBANK: Request failed with status code 400
+AgentB GNews error for HINDUNILVR: Request failed with status code 400
+AgentB GNews error for ITC: Request failed with status code 400
+AgentB GNews error for ONGC: Request failed with status code 400
+AgentB GNews error for NTPC: Request failed with status code 400
+AgentB GNews error for POWERGRID: Request failed with status code 400
+  📡 GNews per-company — 0 articles
+✅ AgentB done — fetched 45, saved 45 new articles in 13.6s
+✅ News fetch complete (Python AI processes in background)
+
+  📊 Sentiment: analyzing 80 articles...
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▼ MSFT: Bank of America Names 2 Top Neocloud Stocks to Buy in 2
+  ▼ GOOGL: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ META: The Week in Numbers: oil prices go up, Meta ordered to 
+  ▲ SBIN: Indian financial sector is about to be disrupted and le
+  ▼ POWERGRID: Nasdaq to lead the fall as stocks shrug off Trump's dea
+  ▲ NVDA: The Scrappy $949 GPU Taking Aim at Nvidia's Grip on Loc
+  ▲ POWERGRID: Who Is Balen Shah? Nepal's Youngest Prime Minister Prop
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▼ TCS: Stock market crash drives over 900 stocks to their 52-w
+  ▼ NVDA: Reddit Sentiment on SMCI Collapsed From 82 to 12 in Thr
+  ▲ GOOGL: This AI Semi Equipment Maker Has Been Quietly Chewing U
+  ▲ NVDA: The Future Is Now: 2 Medical Diagnostic AI Stocks to Sn
+  ▼ MSFT: SoftBank secures $40 billion loan to boost OpenAI inves
+  ▼ NVDA: 1 Reason Meta's AI Spending Spree Won't Slow Down in 20
+  ▼ RELIANCE: Top Gainers &amp; Losers on Mar 27: Godfrey Phillips, R
+  ▼ SBIN: US Justice Department Probes Stanford, Ohio State, UC S
+  ▲ NVDA: 3 Reasons Ethereum Could Double By 2027 -- and 1 Reason
+  ▼ TSLA: Tesla Stock Tries to Break 5-Week Losing Run. SpaceX IP
+  ▼ TSLA: Market Chatter: Tesla CEO Musk Plans 30% Allocation of 
+  ▼ ITC: Bitcoin slips nearly 3% to $68K as Iran rejects US prop
+  ▼ GOOGL: Trending tickers: Reddit, Meta, Novartis, Metlen Energy
+  ▼ POWERGRID: FTSE 100 LIVE: Stocks muted as Trump delays strikes on 
+  ▼ SUNPHARMA: GLP-1 impact: Jefferies sees these 3 stocks as winners 
+  ▲ ONGC: Foreign investors flee Indian assets at record pace on 
+  ▲ AMZN: Market Chatter: Amazon-Backed Anthropic Wins Early Roun
+  ▲ TSLA: VW's software partnership with Rivian clears investment
+  ▼ RELIANCE: Reliance Industries shares drop 5%, wipe off Rs 88,000 
+  ▼ AMZN: Quantum Computing Stocks IonQ, Rigetti Computing, and D
+  ▲ POWERGRID: CSK stock jumps 60% in 3 months in unlisted market ahea
+  ▲ AAPL: Apple Skipped the AI Arms Race – Now Its Strategy Looks
+  ▲ MSFT: Bull of the Day: BWX Technologies, Inc. (BWXT)
+  ▼ RELIANCE: Vodafone Idea, Filatex Fashions, Ola Electric Mobility—
+  ▲ META: This Brilliant Artificial Intelligence (AI) Stock Just 
+  ▲ AMZN: Affirm (AFRM) Expands Partnerships Driving Fintech Grow
+  ▼ GOOGL: New BBC boss under pressure to reveal Google shares
+[0mGET /api/stocks/search?q=AAPL [32m200[0m 211.339 ms - 983[0m
+  ✓ Sentiment batch done: 36 updated (5 fetched, 74 from DB)
+  ▼ NVDA: AI Bubble Warning: Nvidia and AMD Wipes Out Billions in
+  ▼ NVDA: AI Bubble Warning: Nvidia and AMD Wipes Out Billions in
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▼ NVDA: Nvidia May Redesign Feynman Chip on TSMC Limits
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ▲ AAPL: Fidelity’s ETF For Russell 1000 Large-Cap Growth
+  ✓ Sentiment batch done: 28 updated (0 fetched, 144 from DB)
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 4:52:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+  📊 SidebarAgent: Fetching 89 symbols...
+  ✅ SidebarAgent: 176/89 symbols in 0.5s
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 4:54:20 PM
+
+💹 Refreshing prices (parallel)...
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✅ IndicesAgent: 15/25 in 0.4s
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 3.861 ms - 253524[0m
+[0mGET /api/news?limit=100 [32m200[0m 3580.257 ms - 81377[0m
+[0mGET /api/stocks/RELIANCE [32m200[0m 3690.933 ms - 286[0m
+[0mGET /api/stocks/search?q=JH [32m200[0m 153.444 ms - 798[0m
+[0mGET /api/stocks/TCS [32m200[0m 133.457 ms - 280[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 213.348 ms - -[0m
+[0mGET /api/stocks/INFY [32m200[0m 148.448 ms - 269[0m
+[0mGET /api/stocks/TCS [36m304[0m 82.608 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 77.289 ms - -[0m
+[0mGET /api/stocks/SBIN [32m200[0m 120.190 ms - 284[0m
+[0mGET /api/stocks/SBIN [36m304[0m 29.370 ms - -[0m
+[0mGET /api/stocks/AAPL [32m200[0m 139.411 ms - 278[0m
+[0mGET /api/stocks/AAPL [36m304[0m 88.847 ms - -[0m
+[0mGET /api/stocks/TSLA [32m200[0m 139.691 ms - 281[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.275 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.235 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.092 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.075 ms - 0[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 21.119 ms - 64[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.745 ms - 69[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.089 ms - 0[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 4.678 ms - 65[0m
+[0mGET /api/stocks [32m200[0m 2.898 ms - 255881[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.822 ms - 65[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.030 ms - 0[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.330 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.487 ms - 65[0m
+[0mGET /api/stocks/TSLA [36m304[0m 200.816 ms - -[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.392 ms - 69[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.258 ms - 64[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.160 ms - 65[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.038 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.749 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.636 ms - 65[0m
+[0mGET /api/stocks/search?q=JHJLK [32m200[0m 83.571 ms - 26[0m
+⚡ Done: RELIANCE — 41 articles (41 new) in 1.0s
+⚡ Done: RELIANCE — 41 articles (41 new) in 0.9s
+⚡ Done: TSLA — 77 articles (77 new) in 1.2s
+⚡ Done: TCS — 53 articles (53 new) in 1.2s
+⚡ Done: AAPL — 76 articles (76 new) in 1.3s
+⚡ Done: SBIN — 31 articles (31 new) in 1.3s
+⚡ Done: TSLA — 77 articles (77 new) in 1.2s
+⚡ Done: TCS — 53 articles (53 new) in 1.2s
+⚡ Done: INFY — 86 articles (86 new) in 1.5s
+⚡ Done: INFY — 86 articles (86 new) in 1.3s
+⚡ Done: SBIN — 31 articles (31 new) in 1.4s
+⚡ Done: AAPL — 76 articles (76 new) in 2.2s
+[0mGET /api/stocks/search?q=J [32m200[0m 2.349 ms - 2153[0m
+[0mGET /api/stocks [36m304[0m 6.162 ms - -[0m
+
+══════════════════════════════════════════════════
+📰 NEWS FETCH: 3/27/2026, 4:55:00 PM
+══════════════════════════════════════════════════
+
+🌍 AgentA starting — fetching global market news...
+  ⚠ Reuters Companies: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Reuters Business: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Finnhub general: Request failed with status code 401
+  📡 Yahoo per-stock: 80 articles
+  ⚠ Finnhub forex: Request failed with status code 401
+  ⚠ Finnhub merger: Request failed with status code 401
+  📡 Finnhub: 0 articles
+  ⚠ Investing.com Stocks: Status code 404
+  ⚠ Barrons: Status code 403
+  ⚠ Forbes Investing: Status code 404
+  ⚠ Zacks: Status code 404
+  📡 RSS: 14/27 feeds live, 163 articles
+✅ AgentA done — 191 total, 191 new in 7.3s
+
+🇮🇳 AgentB starting — fetching Indian market news...
+  📡 RSS: Economic Times Markets — 15 items
+AgentB GNews error for RELIANCE: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for TCS: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 RSS: NDTV Profit — 15 items
+  📡 RSS: LiveMint Markets — 15 items
+  📡 RSS: ET Prime Markets — 0 items
+AgentB GNews error for INFY: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for HDFCBANK: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 GNews broad India — 0 articles
+AgentB GNews error for ICICIBANK: Request failed with status code 400
+AgentB GNews error for WIPRO: Request failed with status code 400
+AgentB GNews error for BAJFINANCE: Request failed with status code 400
+AgentB GNews error for ADANIENT: Request failed with status code 400
+AgentB GNews error for SBIN: Request failed with status code 400
+AgentB GNews error for TATAMOTORS: Request failed with status code 400
+AgentB GNews error for MARUTI: Request failed with status code 400
+AgentB GNews error for SUNPHARMA: Request failed with status code 400
+AgentB GNews error for LTIM: Request failed with status code 400
+AgentB GNews error for AXISBANK: Request failed with status code 400
+AgentB GNews error for KOTAKBANK: Request failed with status code 400
+AgentB GNews error for HINDUNILVR: Request failed with status code 400
+AgentB GNews error for ITC: Request failed with status code 400
+AgentB GNews error for ONGC: Request failed with status code 400
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 ETFAgent: Fetching 131 ETFs...
+AgentB GNews error for NTPC: Request failed with status code 400
+AgentB GNews error for POWERGRID: Request failed with status code 400
+  📡 GNews per-company — 0 articles
+✅ AgentB done — fetched 45, saved 45 new articles in 13.9s
+✅ News fetch complete (Python AI processes in background)
+
+  ✅ ETFAgent: 123/131 in 1.5s
+  ✓ DataAgent: Got 168/172 F&O stocks
+  📊 Sentiment: analyzing 80 articles...
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▼ MSFT: Bank of America Names 2 Top Neocloud Stocks to Buy in 2
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+[0mGET /api/stocks [36m304[0m 7.348 ms - -[0m
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ GOOGL: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ META: The Week in Numbers: oil prices go up, Meta ordered to 
+  ▲ SBIN: Indian financial sector is about to be disrupted and le
+  ▼ POWERGRID: Nasdaq to lead the fall as stocks shrug off Trump's dea
+  ▲ NVDA: The Scrappy $949 GPU Taking Aim at Nvidia's Grip on Loc
+  ▲ POWERGRID: Who Is Balen Shah? Nepal's Youngest Prime Minister Prop
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▼ TCS: Stock market crash drives over 900 stocks to their 52-w
+  ▼ NVDA: Reddit Sentiment on SMCI Collapsed From 82 to 12 in Thr
+  ▲ GOOGL: This AI Semi Equipment Maker Has Been Quietly Chewing U
+  ▲ NVDA: The Future Is Now: 2 Medical Diagnostic AI Stocks to Sn
+  ▼ MSFT: SoftBank secures $40 billion loan to boost OpenAI inves
+  ▼ NVDA: 1 Reason Meta's AI Spending Spree Won't Slow Down in 20
+  ▼ RELIANCE: Top Gainers &amp; Losers on Mar 27: Godfrey Phillips, R
+  ▼ TCS: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ TCS: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ INFY: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ INFY: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ SBIN: US Justice Department Probes Stanford, Ohio State, UC S
+  ▲ NVDA: 3 Reasons Ethereum Could Double By 2027 -- and 1 Reason
+  ▼ TSLA: Tesla Stock Tries to Break 5-Week Losing Run. SpaceX IP
+  ▼ TSLA: Tesla Stock Tries to Break 5-Week Losing Run. SpaceX IP
+  ▼ TSLA: Tesla Stock Tries to Break 5-Week Losing Run. SpaceX IP
+  ▲ TSLA: Silverleafe Capital Partners LLC Acquires 1,560 Shares 
+  ▲ TSLA: Silverleafe Capital Partners LLC Acquires 1,560 Shares 
+  ▼ RELIANCE: Reliance Industries Shares Slump 4.1%, Lose ₹80,000 Cro
+  ▼ RELIANCE: Reliance Industries Shares Slump 4.1%, Lose ₹80,000 Cro
+  ✓ Sentiment batch done: 41 updated (4 fetched, 66 from DB)
+[0mGET /api/stocks [36m304[0m 7.665 ms - -[0m
+[0mGET /api/stocks [36m304[0m 4.468 ms - -[0m
+[0mGET /api/news?limit=100 [32m200[0m 2620.317 ms - 81702[0m
+[0mGET /api/stocks/search?q=H [32m200[0m 0.354 ms - 2023[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 2878.031 ms - -[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 39.865 ms - -[0m
+[0mGET /api/stocks/TCS [36m304[0m 365.727 ms - -[0m
+[0mGET /api/stocks/TCS [36m304[0m 84.964 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 186.910 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 83.556 ms - -[0m
+[0mGET /api/stocks/SBIN [36m304[0m 192.262 ms - -[0m
+[0mGET /api/stocks/SBIN [36m304[0m 51.375 ms - -[0m
+[0mGET /api/stocks/search?q=HH [32m200[0m 171.115 ms - 943[0m
+[0mGET /api/stocks/AAPL [36m304[0m 261.676 ms - -[0m
+[0mGET /api/stocks/TSLA [36m304[0m 320.043 ms - -[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.348 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.061 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.068 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.050 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.033 ms - 0[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 11.873 ms - 69[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 5.407 ms - 64[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.202 ms - 0[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.448 ms - 65[0m
+[0mGET /api/stocks [32m200[0m 4.768 ms - 258691[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 5.016 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 4.891 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.990 ms - 65[0m
+[0mGET /api/stocks/AAPL [36m304[0m 380.060 ms - -[0m
+[0mGET /api/stocks/TSLA [36m304[0m 189.197 ms - -[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.026 ms - 69[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.397 ms - 64[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.276 ms - 65[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.208 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.161 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.095 ms - 65[0m
+⚡ Done: RELIANCE — 41 articles (41 new) in 0.5s
+⚡ Done: AAPL — 76 articles (76 new) in 0.4s
+⚡ Done: TSLA — 77 articles (77 new) in 0.5s
+⚡ Done: TCS — 53 articles (53 new) in 0.5s
+⚡ Done: SBIN — 31 articles (31 new) in 0.5s
+[0mGET /api/stocks/search?q=HHJ [32m200[0m 99.224 ms - 26[0m
+⚡ Done: RELIANCE — 41 articles (41 new) in 0.4s
+⚡ Done: TCS — 53 articles (53 new) in 0.4s
+⚡ Done: INFY — 86 articles (86 new) in 0.5s
+⚡ Done: AAPL — 76 articles (76 new) in 0.5s
+⚡ Done: TSLA — 77 articles (77 new) in 0.5s
+⚡ Done: SBIN — 31 articles (31 new) in 0.6s
+⚡ Done: INFY — 86 articles (86 new) in 0.8s
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 4:56:20 PM
+
+💹 Refreshing prices (parallel)...
+  📊 SidebarAgent: Fetching 89 symbols...
+  ✅ IndicesAgent: 15/25 in 0.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+  ✅ SidebarAgent: 176/89 symbols in 0.5s
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 6.041 ms - 258691[0m
+[0mGET /api/stocks [36m304[0m 5.519 ms - -[0m
+[0mGET /api/news?limit=100 [32m200[0m 2171.219 ms - 81702[0m
+[0mGET /api/stocks/search?q=J [36m304[0m 1.270 ms - -[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 3859.065 ms - -[0m
+[0mGET /api/stocks/search?q=JL [32m200[0m 626.038 ms - 757[0m
+[0mGET /api/stocks/TCS [32m200[0m 534.120 ms - 281[0m
+[0mGET /api/stocks/search?q=JLL [32m200[0m 638.831 ms - 589[0m
+[0mGET /api/stocks/INFY [36m304[0m 550.682 ms - -[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 1592.450 ms - -[0m
+[0mGET /api/stocks/SBIN [36m304[0m 532.076 ms - -[0m
+[0mGET /api/stocks/TCS [36m304[0m 553.260 ms - -[0m
+[0mGET /api/stocks/AAPL [36m304[0m 546.089 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 564.353 ms - -[0m
+[0mGET /api/stocks/TSLA [36m304[0m 547.875 ms - -[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.143 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.079 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.074 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.084 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.066 ms - 0[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 10.747 ms - 69[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 5.952 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.840 ms - 65[0m
+[0mGET /api/stocks [32m200[0m 5.140 ms - 261915[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.911 ms - 65[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.472 ms - 64[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.666 ms - 65[0m
+[0mGET /api/stocks/SBIN [36m304[0m 518.417 ms - -[0m
+[0mGET /api/stocks/AAPL [36m304[0m 511.969 ms - -[0m
+⚡ Done: TCS — 53 articles (53 new) in 1.0s
+⚡ Done: INFY — 86 articles (86 new) in 1.0s
+⚡ Done: TSLA — 77 articles (77 new) in 1.0s
+⚡ Done: SBIN — 32 articles (32 new) in 1.1s
+⚡ Done: RELIANCE — 42 articles (42 new) in 1.1s
+⚡ Done: AAPL — 76 articles (76 new) in 1.1s
+[0mGET /api/stocks/TSLA [36m304[0m 512.318 ms - -[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 4.064 ms - 69[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.870 ms - 64[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.386 ms - 65[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.833 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.736 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 1.716 ms - 65[0m
+⚡ Done: SBIN — 32 articles (32 new) in 0.8s
+⚡ Done: TCS — 53 articles (53 new) in 0.9s
+⚡ Done: TSLA — 77 articles (77 new) in 0.9s
+⚡ Done: RELIANCE — 42 articles (42 new) in 0.9s
+⚡ Done: AAPL — 76 articles (76 new) in 0.9s
+⚡ Done: INFY — 86 articles (86 new) in 0.9s
+[0mGET /api/stocks [32m200[0m 5.537 ms - 261915[0m
+[0mGET /api/stocks [36m304[0m 6.118 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 4:58:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.2s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks/search?q=DFF [32m200[0m 136.127 ms - 26[0m
+[0mGET /api/stocks/search?q=DFFDFDD [32m200[0m 210.610 ms - 26[0m
+[0mGET /api/stocks [32m200[0m 5.656 ms - 261915[0m
+[0mGET /api/stocks [36m304[0m 9.057 ms - -[0m
+  📊 SidebarAgent: Fetching 89 symbols...
+  ✅ SidebarAgent: 176/89 symbols in 0.8s
+[0mGET /api/stocks [36m304[0m 5.464 ms - -[0m
+
+══════════════════════════════════════════════════
+📰 NEWS FETCH: 3/27/2026, 5:00:00 PM
+══════════════════════════════════════════════════
+
+🌍 AgentA starting — fetching global market news...
+  📊 Sentiment: analyzing 30 articles...
+  ⚠ Reuters Business: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Reuters Companies: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Finnhub general: Request failed with status code 401
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  📡 Yahoo per-stock: 80 articles
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ⚠ Finnhub forex: Request failed with status code 401
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ⚠ Finnhub merger: Request failed with status code 401
+  📡 Finnhub: 0 articles
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▲ RELIANCE: RIL shares fall 12% from record high, buy on dips? Resi
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ TSLA: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ✓ Sentiment batch done: 12 updated (0 fetched, 26 from DB)
+  ⚠ Investing.com Stocks: Status code 404
+  ⚠ Barrons: Status code 403
+  ⚠ Forbes Investing: Status code 404
+  ⚠ Zacks: Status code 404
+  📡 RSS: 14/27 feeds live, 163 articles
+✅ AgentA done — 191 total, 191 new in 14.6s
+
+🇮🇳 AgentB starting — fetching Indian market news...
+  📡 RSS: Economic Times Markets — 15 items
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for RELIANCE: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for TCS: Request failed with status code 400
+  📡 RSS: NDTV Profit — 15 items
+  📡 RSS: LiveMint Markets — 15 items
+  📡 RSS: ET Prime Markets — 0 items
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for INFY: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 GNews broad India — 0 articles
+[0mGET /api/stocks [36m304[0m 6.266 ms - -[0m
+AgentB GNews error for HDFCBANK: Request failed with status code 400
+AgentB GNews error for ICICIBANK: Request failed with status code 400
+AgentB GNews error for WIPRO: Request failed with status code 400
+AgentB GNews error for BAJFINANCE: Request failed with status code 400
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 ETFAgent: Fetching 131 ETFs...
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:00:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.3s
+  Chart1d error for TATAMOTORS.NS: chart 404
+AgentB GNews error for ADANIENT: Request failed with status code 400
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+AgentB GNews error for SBIN: Request failed with status code 400
+  ✅ ETFAgent: 123/131 in 1.2s
+  ✓ DataAgent: Got 168/172 F&O stocks
+AgentB GNews error for TATAMOTORS: Request failed with status code 400
+AgentB GNews error for MARUTI: Request failed with status code 400
+AgentB GNews error for SUNPHARMA: Request failed with status code 400
+AgentB GNews error for LTIM: Request failed with status code 400
+AgentB GNews error for AXISBANK: Request failed with status code 400
+AgentB GNews error for KOTAKBANK: Request failed with status code 400
+AgentB GNews error for HINDUNILVR: Request failed with status code 400
+AgentB GNews error for ITC: Request failed with status code 400
+AgentB GNews error for ONGC: Request failed with status code 400
+AgentB GNews error for NTPC: Request failed with status code 400
+AgentB GNews error for POWERGRID: Request failed with status code 400
+  📡 GNews per-company — 0 articles
+✅ AgentB done — fetched 45, saved 45 new articles in 13.7s
+✅ News fetch complete (Python AI processes in background)
+
+  📊 Sentiment: analyzing 80 articles...
+  ▲ GOOGL: Alphabet will surge 40% as Google becomes an AI leader,
+  ▲ NVDA: 1 Stock That Wins Whether Oil Goes to $120 or $60
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▼ MSFT: Bank of America Names 2 Top Neocloud Stocks to Buy in 2
+  ▼ GOOGL: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ META: The Week in Numbers: oil prices go up, Meta ordered to 
+  ▲ SBIN: Indian financial sector is about to be disrupted and le
+  ▼ POWERGRID: Nasdaq to lead the fall as stocks shrug off Trump's dea
+  ▲ NVDA: The Scrappy $949 GPU Taking Aim at Nvidia's Grip on Loc
+  ▲ POWERGRID: Who Is Balen Shah? Nepal's Youngest Prime Minister Prop
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▲ TSLA: Kathmere Capital Management LLC Acquires 3,602 Shares o
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▼ SBIN: State Bank of India Shares Hit Intraday Low Amid Price 
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▼ TCS: Stock market crash drives over 900 stocks to their 52-w
+  ▼ NVDA: Reddit Sentiment on SMCI Collapsed From 82 to 12 in Thr
+[0mGET /api/stocks [32m200[0m 7.367 ms - 261915[0m
+  ▲ GOOGL: This AI Semi Equipment Maker Has Been Quietly Chewing U
+  ▲ NVDA: The Future Is Now: 2 Medical Diagnostic AI Stocks to Sn
+  ▼ MSFT: SoftBank secures $40 billion loan to boost OpenAI inves
+  ▼ NVDA: 1 Reason Meta's AI Spending Spree Won't Slow Down in 20
+  ▼ RELIANCE: Top Gainers &amp; Losers on Mar 27: Godfrey Phillips, R
+  ✓ Sentiment batch done: 30 updated (3 fetched, 63 from DB)
+[0mGET /api/stocks [36m304[0m 7.747 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+  📊 SidebarAgent: Fetching 89 symbols...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:02:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.5s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✅ SidebarAgent: 176/89 symbols in 0.9s
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 5.539 ms - 261915[0m
+[0mGET /api/stocks [36m304[0m 7.520 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:04:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.3s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 7.612 ms - 261915[0m
+
+══════════════════════════════════════════════════
+📰 NEWS FETCH: 3/27/2026, 5:05:00 PM
+══════════════════════════════════════════════════
+
+🌍 AgentA starting — fetching global market news...
+  ⚠ Reuters Companies: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Reuters Business: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Finnhub general: Request failed with status code 401
+  📡 Yahoo per-stock: 80 articles
+  ⚠ Finnhub forex: Request failed with status code 401
+  ⚠ Finnhub merger: Request failed with status code 401
+  📡 Finnhub: 0 articles
+  ⚠ Investing.com Stocks: Status code 404
+  ⚠ Barrons: Status code 403
+  ⚠ Forbes Investing: Status code 404
+  ⚠ Zacks: Status code 404
+  📡 RSS: 14/27 feeds live, 163 articles
+✅ AgentA done — 193 total, 193 new in 6.3s
+
+🇮🇳 AgentB starting — fetching Indian market news...
+  📡 RSS: Economic Times Markets — 15 items
+AgentB GNews error for RELIANCE: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for TCS: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 RSS: NDTV Profit — 15 items
+  📡 RSS: LiveMint Markets — 15 items
+  📡 RSS: ET Prime Markets — 0 items
+AgentB GNews error for INFY: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for HDFCBANK: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 GNews broad India — 0 articles
+AgentB GNews error for ICICIBANK: Request failed with status code 400
+AgentB GNews error for WIPRO: Request failed with status code 400
+AgentB GNews error for BAJFINANCE: Request failed with status code 400
+AgentB GNews error for ADANIENT: Request failed with status code 400
+AgentB GNews error for SBIN: Request failed with status code 400
+AgentB GNews error for TATAMOTORS: Request failed with status code 400
+AgentB GNews error for MARUTI: Request failed with status code 400
+AgentB GNews error for SUNPHARMA: Request failed with status code 400
+AgentB GNews error for LTIM: Request failed with status code 400
+AgentB GNews error for AXISBANK: Request failed with status code 400
+AgentB GNews error for KOTAKBANK: Request failed with status code 400
+AgentB GNews error for HINDUNILVR: Request failed with status code 400
+AgentB GNews error for ITC: Request failed with status code 400
+AgentB GNews error for ONGC: Request failed with status code 400
+AgentB GNews error for NTPC: Request failed with status code 400
+AgentB GNews error for POWERGRID: Request failed with status code 400
+  📡 GNews per-company — 0 articles
+✅ AgentB done — fetched 45, saved 45 new articles in 13.7s
+✅ News fetch complete (Python AI processes in background)
+
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 ETFAgent: Fetching 131 ETFs...
+  📊 SidebarAgent: Fetching 89 symbols...
+  ✅ SidebarAgent: 176/89 symbols in 0.6s
+  ✅ ETFAgent: 123/131 in 0.9s
+  ✓ DataAgent: Got 168/172 F&O stocks
+  📊 Sentiment: analyzing 80 articles...
+  ▲ GOOGL: Alphabet will surge 40% as Google becomes an AI leader,
+  ▲ NVDA: Marvell's Data Center Revenue Just Grew 21%. Here's Why
+  ▲ NVDA: QTUM ETF Explained: How Investors Are Gaining Exposure 
+  ▲ NVDA: 1 Stock That Wins Whether Oil Goes to $120 or $60
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▼ MSFT: Bank of America Names 2 Top Neocloud Stocks to Buy in 2
+  ▼ GOOGL: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ META: The Week in Numbers: oil prices go up, Meta ordered to 
+  ▲ SBIN: Indian financial sector is about to be disrupted and le
+  ▼ POWERGRID: Nasdaq to lead the fall as stocks shrug off Trump's dea
+  ▲ NVDA: The Scrappy $949 GPU Taking Aim at Nvidia's Grip on Loc
+  ▲ POWERGRID: Who Is Balen Shah? Nepal's Youngest Prime Minister Prop
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▼ TCS: Stock market crash drives over 900 stocks to their 52-w
+  ▼ NVDA: Reddit Sentiment on SMCI Collapsed From 82 to 12 in Thr
+  ▲ GOOGL: This AI Semi Equipment Maker Has Been Quietly Chewing U
+  ▲ NVDA: The Future Is Now: 2 Medical Diagnostic AI Stocks to Sn
+  ▼ MSFT: SoftBank secures $40 billion loan to boost OpenAI inves
+  ▼ META: 1 Reason Meta's AI Spending Spree Won't Slow Down in 20
+  ▼ RELIANCE: Top Gainers &amp; Losers on Mar 27: Godfrey Phillips, R
+  ▼ TCS: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ TCS: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ▼ INFY: Infosys, TCS, Wipro, HCL Tech, Coforge: Ambit cuts targ
+  ✓ Sentiment batch done: 23 updated (4 fetched, 70 from DB)
+[0mGET /api/stocks [36m304[0m 7.550 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:06:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.2s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 7.539 ms - 261915[0m
+[0mGET /api/stocks [36m304[0m 5.469 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+  📊 SidebarAgent: Fetching 89 symbols...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:08:20 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+  ✅ SidebarAgent: 176/89 symbols in 1.1s
+[0mGET /api/stocks [32m200[0m 5.817 ms - 261915[0m
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 ETFAgent: Fetching 131 ETFs...
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:20:42 PM
+
+💹 Refreshing prices (parallel)...
+  📊 SidebarAgent: Fetching 89 symbols...
+  📊 ETFAgent: Fetching 131 ETFs...
+  ✅ IndicesAgent: 15/25 in 1.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+  ✅ ETFAgent: 123/131 in 3.0s
+  ✓ DataAgent: Got 168/172 F&O stocks
+  ✅ ETFAgent: 123/131 in 3.2s
+  ✅ SidebarAgent: 176/89 symbols in 4.0s
+[0mGET /api/stocks [32m200[0m 5.373 ms - 261915[0m
+[0mGET /api/stocks [36m304[0m 5.589 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:22:42 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 8.576 ms - 261915[0m
+  📊 SidebarAgent: Fetching 89 symbols...
+  ✅ SidebarAgent: 176/89 symbols in 0.5s
+[0mGET /api/stocks [36m304[0m 6.210 ms - -[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:24:42 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 1.1s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+
+══════════════════════════════════════════════════
+📰 NEWS FETCH: 3/27/2026, 5:25:00 PM
+══════════════════════════════════════════════════
+
+🌍 AgentA starting — fetching global market news...
+  ⚠ Reuters Companies: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Reuters Business: getaddrinfo ENOTFOUND feeds.reuters.com
+  ⚠ Finnhub general: Request failed with status code 401
+  ⚠ Finnhub forex: Request failed with status code 401
+  ⚠ Finnhub merger: Request failed with status code 401
+  📡 Finnhub: 0 articles
+  📡 Yahoo per-stock: 80 articles
+  ⚠ Investing.com Stocks: Status code 404
+  ⚠ Barrons: Status code 403
+  ⚠ Forbes Investing: Status code 404
+  ⚠ Zacks: Status code 404
+  📡 RSS: 14/27 feeds live, 164 articles
+✅ AgentA done — 191 total, 191 new in 6.0s
+
+🇮🇳 AgentB starting — fetching Indian market news...
+  📡 RSS: Economic Times Markets — 15 items
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for RELIANCE: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for TCS: Request failed with status code 400
+  📡 RSS: NDTV Profit — 15 items
+  📡 RSS: LiveMint Markets — 15 items
+  📡 RSS: ET Prime Markets — 0 items
+AgentB GNews broad error: Request failed with status code 400
+AgentB GNews error for INFY: Request failed with status code 400
+AgentB GNews broad error: Request failed with status code 400
+  📡 GNews broad India — 0 articles
+AgentB GNews error for HDFCBANK: Request failed with status code 400
+AgentB GNews error for ICICIBANK: Request failed with status code 400
+AgentB GNews error for WIPRO: Request failed with status code 400
+AgentB GNews error for BAJFINANCE: Request failed with status code 400
+AgentB GNews error for ADANIENT: Request failed with status code 400
+AgentB GNews error for SBIN: Request failed with status code 400
+AgentB GNews error for TATAMOTORS: Request failed with status code 400
+AgentB GNews error for MARUTI: Request failed with status code 400
+AgentB GNews error for SUNPHARMA: Request failed with status code 400
+AgentB GNews error for LTIM: Request failed with status code 400
+AgentB GNews error for AXISBANK: Request failed with status code 400
+AgentB GNews error for KOTAKBANK: Request failed with status code 400
+AgentB GNews error for HINDUNILVR: Request failed with status code 400
+AgentB GNews error for ITC: Request failed with status code 400
+AgentB GNews error for ONGC: Request failed with status code 400
+AgentB GNews error for NTPC: Request failed with status code 400
+AgentB GNews error for POWERGRID: Request failed with status code 400
+  📡 GNews per-company — 0 articles
+✅ AgentB done — fetched 45, saved 45 new articles in 13.9s
+✅ News fetch complete (Python AI processes in background)
+
+  📊 Sentiment: analyzing 80 articles...
+  ▼ AMZN: Amazon rolls out locker collection service in the Nethe
+  ▲ AAPL: Apple Adds New Partners, To Invest $400 Mln To Expand U
+  ▲ POWERGRID: Paint stocks are about to get interesting; Nomura on wh
+  ▲ TSLA: SpaceX's listing stirs up social media hype, ticker bet
+  ▲ GOOGL: Alphabet will surge 40% as Google becomes an AI leader,
+  ▼ TCS: Tata Motors PV,  IDBI Bank among 8 stocks that hit 52-w
+  ▲ NVDA: QTUM ETF Explained: How Investors Are Gaining Exposure 
+  ▲ AAPL: Why Trump’s New War Deadline Makes Things Worse for the
+  ▼ MSFT: Bank of America Names 2 Top Neocloud Stocks to Buy in 2
+  ▼ GOOGL: These Stocks Are Today’s Movers: Tesla, Meta, Unity, Br
+  ▼ META: The Week in Numbers: oil prices go up, Meta ordered to 
+  ▲ SBIN: Indian financial sector is about to be disrupted and le
+  ▼ POWERGRID: Nasdaq to lead the fall as stocks shrug off Trump's dea
+  ▲ NVDA: The Scrappy $949 GPU Taking Aim at Nvidia's Grip on Loc
+  ▲ POWERGRID: Who Is Balen Shah? Nepal's Youngest Prime Minister Prop
+  ▲ TSLA: Latest News In Electric Vehicles - Green Rain Boosts Di
+  ▼ TCS: Stock market crash drives over 900 stocks to their 52-w
+  ▼ AMZN: Have Tech Stocks Finally Run Out of Road? Here's What t
+  ▼ NVDA: Reddit Sentiment on SMCI Collapsed From 82 to 12 in Thr
+  ▲ GOOGL: This AI Semi Equipment Maker Has Been Quietly Chewing U
+  ▼ MSFT: SoftBank secures $40 billion loan to boost OpenAI inves
+  📊 DataAgent: Fetching 172 F&O stocks in parallel...
+  📊 ETFAgent: Fetching 131 ETFs...
+  ▼ META: 1 Reason Meta's AI Spending Spree Won't Slow Down in 20
+  ✅ ETFAgent: 123/131 in 1.4s
+  ▼ RELIANCE: Top Gainers &amp; Losers on Mar 27: Godfrey Phillips, R
+  ✓ DataAgent: Got 168/172 F&O stocks
+  ✓ Sentiment batch done: 23 updated (4 fetched, 69 from DB)
+  📊 IndicesAgent: Fetching 25 indices...
+  📊 SidebarAgent: Fetching 89 symbols...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:26:42 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.3s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+  ✅ SidebarAgent: 176/89 symbols in 0.6s
+[0mGET /api/stocks [32m200[0m 3.841 ms - 261915[0m
+[0mGET /api/news?limit=100 [32m200[0m 2915.313 ms - 83142[0m
+[0mGET /api/stocks/search?q=h [32m200[0m 0.414 ms - 2023[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 3324.874 ms - -[0m
+[0mGET /api/stocks/RELIANCE [36m304[0m 46.581 ms - -[0m
+[0mGET /api/stocks/TCS [32m200[0m 242.585 ms - 280[0m
+[0mGET /api/stocks/TCS [36m304[0m 117.218 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 426.425 ms - -[0m
+[0mGET /api/stocks/INFY [36m304[0m 114.391 ms - -[0m
+[0mGET /api/stocks/search?q=hn [32m200[0m 1.702 ms - 2033[0m
+[0mGET /api/stocks/SBIN [36m304[0m 302.731 ms - -[0m
+[0mGET /api/stocks/SBIN [36m304[0m 123.086 ms - -[0m
+[0mGET /api/stocks/AAPL [36m304[0m 202.380 ms - -[0m
+[0mGET /api/stocks/TSLA [36m304[0m 179.558 ms - -[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.076 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.047 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.032 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.025 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.020 ms - 0[0m
+[0mOPTIONS /api/news/fetch-stock [32m204[0m 0.038 ms - 0[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 15.965 ms - 64[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.525 ms - 69[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.292 ms - 65[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.531 ms - 65[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.921 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.248 ms - 65[0m
+[0mGET /api/stocks [32m200[0m 2.847 ms - 261915[0m
+[0mGET /api/stocks/AAPL [36m304[0m 222.998 ms - -[0m
+[0mGET /api/stocks/TSLA [36m304[0m 239.215 ms - -[0m
+
+⚡ Instant fetch: RELIANCE (Reliance Industries)
+[0mPOST /api/news/fetch-stock [32m200[0m 8.170 ms - 69[0m
+
+⚡ Instant fetch: TCS (Tata Consultancy Services)
+[0mPOST /api/news/fetch-stock [32m200[0m 11.504 ms - 64[0m
+
+⚡ Instant fetch: INFY (Infosys)
+[0mPOST /api/news/fetch-stock [32m200[0m 4.955 ms - 65[0m
+
+⚡ Instant fetch: SBIN (State Bank of India)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.613 ms - 65[0m
+
+⚡ Instant fetch: AAPL (Apple Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 3.179 ms - 65[0m
+
+⚡ Instant fetch: TSLA (Tesla Inc.)
+[0mPOST /api/news/fetch-stock [32m200[0m 2.978 ms - 65[0m
+⚡ Done: RELIANCE — 42 articles (42 new) in 1.1s
+⚡ Done: RELIANCE — 43 articles (43 new) in 0.8s
+⚡ Done: INFY — 89 articles (89 new) in 1.1s
+⚡ Done: INFY — 89 articles (89 new) in 0.8s
+⚡ Done: TSLA — 77 articles (77 new) in 1.2s
+⚡ Done: TSLA — 77 articles (77 new) in 0.9s
+⚡ Done: TCS — 50 articles (50 new) in 1.2s
+⚡ Done: TCS — 50 articles (50 new) in 0.9s
+⚡ Done: SBIN — 31 articles (31 new) in 1.3s
+⚡ Done: SBIN — 31 articles (31 new) in 1.0s
+⚡ Done: AAPL — 72 articles (72 new) in 1.3s
+⚡ Done: AAPL — 72 articles (72 new) in 1.0s
+[0mGET /api/stocks/search?q=hnnnn [32m200[0m 120.040 ms - 26[0m
+[0mGET /api/stocks [32m200[0m 5.745 ms - 261915[0m
+  📊 IndicesAgent: Fetching 25 indices...
+
+────────────────────────────────────────
+💹 PRICE REFRESH: 3/27/2026, 5:28:42 PM
+
+💹 Refreshing prices (parallel)...
+  ✅ IndicesAgent: 15/25 in 0.4s
+  Chart1d error for TATAMOTORS.NS: chart 404
+  ✗ No data: TATAMOTORS
+✅ Prices updated: 27/28 stocks
+📊 Fetching fundamentals for 1 stocks...
+fetchFundamentals error: HTTP 404
+[0mGET /api/stocks [32m200[0m 7.080 ms - 261915[0m
