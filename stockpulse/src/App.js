@@ -151,7 +151,7 @@ function AuthModal({ onLogin, onClose }) {
     setError(""); setLoading(true);
     try {
       const body = mode === "signup" ? { name, email, password } : { email, password };
-      const res  = await fetch(`${API}/${mode === "signup" ? "register" : "login"}`, {
+      const res  = await fetch(`${API}/${mode === 'signup' ? 'signup' : 'login'}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
