@@ -37,9 +37,10 @@ router.get("/", async (req, res) => {
     const total = await db().prepare(
       `SELECT COUNT(*) as count FROM articles a ${where}`
     ).get(params)?.count || 0;
+    const totalNum = parseInt(total) || 0;
 
     res.json({ success: true, data: articles,
-      pagination: { page, limit, total, hasMore: offset + limit < total } });
+      pagination: { page, limit, total: totalNum, hasMore: offset + limit < totalNum } });
   } catch (err) {
     console.error("GET /news error:", err);
     res.status(500).json({ success: false, error: err.message });
