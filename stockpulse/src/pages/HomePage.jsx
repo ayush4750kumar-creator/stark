@@ -382,40 +382,7 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
             )}
           </div>
 
-          {/* Sentiment filter tabs */}
-          {!loading && allNews.length > 0 && (
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              {[
-                { key: "all",     label: "All",        color: null },
-                { key: "bullish", label: "▲ Bullish",  color: "#16a34a", bg: "rgba(22,163,74,0.10)",   border: "rgba(22,163,74,0.35)"  },
-                { key: "bearish", label: "▼ Bearish",  color: "#dc2626", bg: "rgba(220,38,38,0.10)",   border: "rgba(220,38,38,0.35)"  },
-                { key: "neutral", label: "◆ Neutral",  color: "#6b7280", bg: "rgba(107,114,128,0.10)", border: "rgba(107,114,128,0.30)" },
-              ].map(tab => {
-                const active = sentimentFilter === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => { setSentimentFilter(tab.key); setVisibleCount(PAGE_SIZE); }}
-                    style={{
-                      padding: "5px 13px", borderRadius: 20, cursor: "pointer",
-                      fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 700,
-                      letterSpacing: "0.02em", transition: "all 0.15s",
-                      border: active ? `1.5px solid ${tab.border || "var(--text)"}` : "1.5px solid var(--border2)",
-                      background: active ? (tab.bg || "var(--text)") : "transparent",
-                      color: active ? (tab.color || "var(--bg)") : "var(--text3)",
-                    }}
-                  >
-                    {tab.label}
-                    {tab.key !== "all" && (
-                      <span style={{ marginLeft: 5, opacity: 0.7, fontWeight: 500 }}>
-                        {allNews.filter(a => a.sentiment === tab.key).length}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          
         </div>
 
         {loading && (
