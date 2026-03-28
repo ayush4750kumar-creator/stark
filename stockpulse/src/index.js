@@ -5,6 +5,5 @@ import App from "./App";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<React.StrictMode><App /></React.StrictMode>);
-const { resetArticles } = require('./agents/agentF_summarizer');
 // Add right after dbReady:
 dbReady.then(() => resetArticles());
