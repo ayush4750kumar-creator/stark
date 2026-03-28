@@ -85,7 +85,7 @@ module.exports = { runAgentE };
 async function ensureImportanceColumn() {
   const db = getDB();
   try {
-    db.prepare("ALTER TABLE articles ADD COLUMN importance TEXT").run();
+    db.prepare("ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance TEXT").run();
     console.log("  ✓ AgentE: added importance column");
   } catch(e) {
     // Column already exists — fine
