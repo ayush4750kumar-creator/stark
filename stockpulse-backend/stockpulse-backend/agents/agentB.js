@@ -48,8 +48,7 @@ async function saveArticle(article) {
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES
-        (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB')
-    `).run(article);
+        (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB') ON CONFLICT DO NOTHING`).run(article);
     return info.changes > 0;
   } catch (err) {
     console.error("AgentB DB error:", err.message);

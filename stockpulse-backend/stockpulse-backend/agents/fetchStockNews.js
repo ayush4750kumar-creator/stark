@@ -39,8 +39,7 @@ async function saveArticle(a) {
     await db().prepare(`
       INSERT INTO articles
         (uuid,symbol,company,headline,full_text,source,source_url,image_url,published_at,agent_source)
-      VALUES(?,?,?,?,?,?,?,?,?,?)
-    `).run([a.uuid, a.symbol, a.company, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.agent_source]);
+      VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`).run([a.uuid, a.symbol, a.company, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.agent_source]);
     return true;
   } catch(e) { console.error("saveArticle error:", e.message); return false; }
 }
