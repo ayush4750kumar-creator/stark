@@ -282,6 +282,167 @@ function AuthModal({ onLogin, onClose }) {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function Layout({ user, onLogin, onLogout }) {
+  const [trackedStocks, setTrackedStocks] = useState([]);
+  const [overlay, setOverlay]             = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const PATH_TITLES = {
+    "/fo/stocks":         "F&O Stocks",
+    "/fo/commodities":    "Commodities",
+    "/screener/intraday": "Intraday Screener",
+    "/screener/etf":      "ETF Screener",
+    "/screener/indices":  "Indices Screener",
+    "/mf/screener":       "Mutual Funds Screener",
+    "/mf/compare":        "Compare Mutual Funds",
+    "/more/ipo":          "IPO",
+    "/more/etfs":         "Global ETFs",
+    "/more/bonds":        "Bonds",
+    "/more/crypto":       "Crypto",
+  };
+
+  useEffect(() => {
+    window.__setOverlay = (path) => setOverlay({ path, title: PATH_TITLES[path] || path });
+    return () => { delete window.__setOverlay; };
+  }, []);
+
+  const fetchedAt  = useRef({});
+  const [activeFilter, setActiveFilter] = useState("global");
+  const [activeStock, setActiveStock]   = useState(null);
+  const [isMobile, setIsMobile]         = useState(window.innerWidth < 900);
+  const location = useLocation();
+  const isDetail = location.pathname.includes("/news/") || location.pathname.includes("/stock/");
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 900);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  useEffect(() => {
+    async function bootStocks() {
+      let symbolsToLoad = DEFAULT_SYMBOLS;
+      if (user?.token) {
+        try {
+          const res  = await fetch(`${BACKEND}/auth/watchlist`, { headers: { Authorization: `Bearer ${user.token}` } });
+          const data = await res.json();
+          if (data.success && data.data?.length) symbolsToLoad = data.data;
+        } catch {}
+      } else {
+        try {
+          const saved = localStorage.getItem("sp_tracked_guest");
+          if (saved) symbolsToLoad = JSON.parse(saved);
+        } catch {}
+      }
+      const loaded = [];
+      for (const sym of symbolsToLoad) {
+        try {
+          const res  = await fetch(`${BACKEND}/stocks/${sym}`);
+          const data = await res.json();
+          if (data.success && data.data) {
+            loaded.push({
+              symbol: data.data.symbol, name: data.data.name,
+              sector: data.data.sector || "Stock", price: data.data.price,
+              change: data.data.change_amt, changePct: data.data.change_pct,
+              change_pct: data.data.change_pct, currency: data.data.currency,
+            });
+          }
+        } catch {}
+      }
+      if (loaded.length > 0) {
+        setTrackedStocks(loaded);
+        for (const s of loaded) {
+          fetchedAt.current[s.symbol] = Date.now();
+          fetch(`${BACKEND}/news/fetch-stock`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol: s.symbol, company: s.name }),
+          }).catch(() => {});
+        }
+      }
+    }
+    bootStocks();
+  }, [user?.token]);
+
+  const refreshPrices = useCallback(async () => {
+    if (trackedStocks.length === 0) return;
+    try {
+      const res  = await fetch(`${BACKEND}/stocks`);
+      const data = await res.json();
+      if (!data.success || !data.data?.length) return;
+      const liveMap = {};
+      data.data.forEach(s => { liveMap[s.symbol] = s; });
+      setTrackedStocks(prev => prev.map(stock => {
+        const live = liveMap[stock.symbol];
+        if (!live || !live.price) return stock;
+        return { ...stock, price: live.price, change: live.change_amt, changePct: live.change_pct, change_pct: live.change_pct };
+      }));
+    } catch {}
+  }, [trackedStocks.length]);
+
+  useEffect(() => {
+    refreshPrices();
+    const interval = setInterval(refreshPrices, PRICE_REFRESH);
+    return () => clearInterval(interval);
+  }, [refreshPrices]);
+
+  useEffect(() => {
+    if (user?.token || trackedStocks.length === 0) return;
+    try { localStorage.setItem("sp_tracked_guest", JSON.stringify(trackedStocks.map(s => s.symbol))); } catch {}
+  }, [trackedStocks, user?.token]);
+
+  const addTracked = useCallback(async (stockOrSymbol) => {
+    if (!user) { setShowLoginModal(true); return; }
+    let stock = typeof stockOrSymbol === "string"
+      ? { symbol: stockOrSymbol, name: stockOrSymbol } : stockOrSymbol;
+    if (!stock?.symbol) return;
+    try {
+      const res  = await fetch(`${BACKEND}/stocks/${stock.symbol}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        stock = {
+          symbol: data.data.symbol, name: data.data.name || stock.name,
+          sector: data.data.sector || stock.sector || "Stock",
+          price: data.data.price, change: data.data.change_amt,
+          changePct: data.data.change_pct, change_pct: data.data.change_pct,
+          currency: data.data.currency,
+        };
+      }
+    } catch {}
+    setTrackedStocks(prev => {
+      if (prev.find(s => s.symbol === stock.symbol)) return prev;
+      return [...prev, stock];
+    });
+    if (user?.token) {
+      try {
+        await fetch(`${BACKEND}/auth/watchlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+          body: JSON.stringify({ symbol: stock.symbol }),
+        });
+      } catch {}
+    }
+    setActiveFilter(stock.symbol);
+    setActiveStock(stock);
+    triggerInstantFetch(stock.symbol, stock.name);
+  }, [user]);
+
+  function triggerInstantFetch(symbol, name) {
+    const CACHE_MS = 5 * 60 * 1000;
+    const last = fetchedAt.current[symbol] || 0;
+    if (Date.now() - last < CACHE_MS) return;
+    fetchedAt.current[symbol] = Date.now();
+    fetch(`${BACKEND}/news/fetch-stock`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol, company: name }),
+    }).catch(() => {});
+  }
+
+  const removeTracked = async (symbol) => {
+    setTrackedStocks(prev => prev.filter(s => s.symbol !== symbol));
+    if (activeFilter === symbol) setActiveFilter("global");
     if (user?.token) {
       try {
         await fetch(`${BACKEND}/auth/watchlist/${symbol}`, { method: "DELETE", headers: { Authorization: `Bearer ${user.token}` } });
