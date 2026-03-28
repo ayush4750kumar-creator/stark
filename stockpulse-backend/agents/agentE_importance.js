@@ -42,6 +42,7 @@ importance must be one of: "high", "medium", "low", "noise"
 }
 
 async function runAgentE(limit = 50) {
+  await ensureImportanceColumn();
   const db = getDB();
   // Get articles that haven't been importance-rated yet
   const articles = await db.prepare(`
@@ -79,3 +80,14 @@ async function runAgentE(limit = 50) {
 }
 
 module.exports = { runAgentE };
+
+// Auto-migrate: add importance column if missing
+async function ensureImportanceColumn() {
+  const db = getDB();
+  try {
+    db.prepare("ALTER TABLE articles ADD COLUMN importance TEXT").run();
+    console.log("  ✓ AgentE: added importance column");
+  } catch(e) {
+    // Column already exists — fine
+  }
+}
