@@ -3,7 +3,7 @@ const express = require("express");
 const bcrypt  = require("bcryptjs");
 const jwt     = require("jsonwebtoken");
 const { getDB } = require("../config/database");
-const Brevo = require("@getbrevo/brevo");
+const SibApiV3Sdk = require("@getbrevo/brevo");
 
 const router      = express.Router();
 const JWT_SECRET  = process.env.JWT_SECRET || "stockpulse_jwt_secret_changeme";
