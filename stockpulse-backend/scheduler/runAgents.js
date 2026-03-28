@@ -6,6 +6,8 @@ require("dotenv").config();
 const cron = require("node-cron");
 const { runAgentA } = require("../agents/agentA");
 const { runAgentB } = require("../agents/agentB");
+const { runAgentE } = require("../agents/agentE_importance");
+const { runAgentF } = require("../agents/agentF_summarizer");
 const { refreshAllPrices } = require("../services/stockPriceService");
 const { prefetchAll } = require("../services/financialsService");
 const { runBatch: runSentimentBatch } = require("../services/sentimentService");

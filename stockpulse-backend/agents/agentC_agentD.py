@@ -40,7 +40,7 @@ def get_unprocessed(limit):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     rows = conn.execute(
-        "SELECT id, headline, full_text, source_url, symbol FROM articles WHERE processed = 0 ORDER BY id DESC LIMIT ?",
+        "SELECT id, headline, full_text, source_url, symbol FROM articles WHERE processed = 0 AND (importance = 'low' OR importance IS NULL) ORDER BY id DESC LIMIT ?",
         (limit,)
     ).fetchall()
     conn.close()

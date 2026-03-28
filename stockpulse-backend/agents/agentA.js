@@ -196,7 +196,7 @@ async function runAgentA() {
   const all = deduplicate([...rssArts, ...finnhubArts, ...stockArts])
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
   let saved = 0;
-  for (const a of all) if (saveArticle(a)) saved++;
+  for (const a of all) if (await saveArticle(a)) saved++;
   console.log(`✅ AgentA done — ${all.length} total, ${saved} new in ${((Date.now()-t0)/1000).toFixed(1)}s`);
   return { fetched: all.length, saved };
 }
