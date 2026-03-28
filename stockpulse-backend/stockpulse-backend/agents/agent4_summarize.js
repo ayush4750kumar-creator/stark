@@ -87,7 +87,7 @@ async function runAgent4(limit = 30) {
       `, [summary, sentiment, article.id]);
 
       done++;
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 1500));
 
     } catch (e) {
       // ✅ Log full Groq error body so you can actually debug it
