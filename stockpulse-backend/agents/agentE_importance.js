@@ -1,53 +1,61 @@
 // agents/agentE_importance.js
-// Rates each unprocessed article for market importance using Gemini
-// Filters out social media noise (Reddit, X, blogs)
-// Marks articles as: impactful / neutral / noise
+// Uses Groq instead of Gemini
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios  = require("axios");
 const { getDB } = require("../config/database");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-
+const GROQ_KEY = process.env.GROQ_API_KEY;
 const NOISE_SOURCES = ["reddit.com", "twitter.com", "x.com", "quora.com", "blogspot.com", "wordpress.com"];
 
 function isNoisySource(url = "", source = "") {
   const combined = (url + source).toLowerCase();
-  const match = NOISE_SOURCES.find(n => combined.includes(n));
-  if (match) console.log("  noise match [" + match + "]: " + source + " | " + url.slice(0,50));
-  return !!match;
+  return NOISE_SOURCES.some(n => combined.includes(n));
 }
 
-async function rateArticle(headline, source) {
-  const prompt = `You are a financial news editor. Rate this news headline for market importance.
-
+async function rateImportance(headline, source, retrying = false) {
+  if (!GROQ_KEY) return "medium";
+  try {
+    const res = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.1-8b-instant",
+        max_tokens: 60,
+        temperature: 0.1,
+        messages: [
+          { role: "system", content: "You are a financial news editor. Always respond with valid JSON only." },
+          { role: "user", content: `Rate this headline's market importance.
 Headline: "${headline}"
 Source: "${source}"
 
-Reply with ONLY a JSON object like this (no markdown, no explanation):
-{"importance": "high", "reason": "earnings beat affects stock price directly"}
-
+Return JSON: {"importance":"high"}
 importance must be one of: "high", "medium", "low", "noise"
-- high: direct market impact (earnings, merger, RBI policy, FDA approval, major contract)
-- medium: relevant but indirect (industry trend, analyst upgrade, new product)  
-- low: minor news, general market commentary
-- noise: opinion, social media, clickbait, irrelevant`;
-
-  try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
-    const json = JSON.parse(text.replace(/```json|```/g, "").trim());
-    return json;
-  } catch {
-    return { importance: "medium", reason: "parse error" };
+- high: earnings, merger, RBI/Fed policy, FDA approval, major contract
+- medium: analyst upgrade, industry trend, new product
+- low: minor commentary, general market talk
+- noise: opinion, clickbait, lifestyle, irrelevant` },
+        ],
+      },
+      { headers: { Authorization: `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" } }
+    );
+    const raw = res.data.choices[0].message.content.trim();
+    const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    return parsed.importance || "medium";
+  } catch (err) {
+    if (err.response?.status === 429 && !retrying) {
+      await new Promise(r => setTimeout(r, 6000));
+      return rateImportance(headline, source, true);
+    }
+    return "medium";
   }
 }
 
 async function runAgentE(limit = 50) {
-  await ensureImportanceColumn();
   const db = getDB();
-  // Get articles that haven't been importance-rated yet
-  const articles = await db.prepare(`
+
+  // Ensure column exists
+  try { db.prepare("ALTER TABLE articles ADD COLUMN importance TEXT").run(); } catch {}
+
+  const articles = db.prepare(`
     SELECT id, headline, source, source_url FROM articles
     WHERE importance IS NULL AND headline IS NOT NULL
     ORDER BY id DESC LIMIT ?
@@ -58,38 +66,26 @@ async function runAgentE(limit = 50) {
   console.log(`  🎯 AgentE: rating ${articles.length} articles...`);
   let rated = 0, filtered = 0;
 
-  for (const article of articles) {
-    try {
-      // Auto-filter noisy sources
-      if (isNoisySource(article.source_url, article.source)) {
-        await db.prepare("UPDATE articles SET importance = 'noise' WHERE id = ?").run([article.id]);
-        filtered++;
-        continue;
+  for (let i = 0; i < articles.length; i += 3) {
+    const batch = articles.slice(i, i + 3);
+    await Promise.all(batch.map(async (article) => {
+      try {
+        if (isNoisySource(article.source_url, article.source)) {
+          db.prepare("UPDATE articles SET importance = 'noise' WHERE id = ?").run(article.id);
+          filtered++;
+          return;
+        }
+        const importance = await rateImportance(article.headline, article.source || "");
+        db.prepare("UPDATE articles SET importance = ? WHERE id = ?").run(importance, article.id);
+        rated++;
+      } catch (err) {
+        console.error(`  ⚠ AgentE error #${article.id}:`, err.message?.slice(0, 50));
       }
-
-      const { importance, reason } = await rateArticle(article.headline, article.source || "");
-      await db.prepare("UPDATE articles SET importance = ? WHERE id = ?").run([importance, article.id]);
-      rated++;
-
-      // Small delay to avoid rate limiting
-      await new Promise(r => setTimeout(r, 300));
-    } catch (err) {
-      console.error(`  ⚠ AgentE error for article ${article.id}:`, err.message);
-    }
+    }));
+    if (i + 3 < articles.length) await new Promise(r => setTimeout(r, 600));
   }
 
   console.log(`  ✅ AgentE: rated ${rated}, filtered ${filtered} noise articles`);
 }
 
 module.exports = { runAgentE };
-
-// Auto-migrate: add importance column if missing
-async function ensureImportanceColumn() {
-  const db = getDB();
-  try {
-    db.prepare("ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance TEXT").run();
-    console.log("  ✓ AgentE: added importance column");
-  } catch(e) {
-    // Column already exists — fine
-  }
-}
