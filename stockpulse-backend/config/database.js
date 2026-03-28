@@ -23,6 +23,7 @@ const SCHEMA = `
     published_at TIMESTAMPTZ,
     sentiment    TEXT,
     sentiment_score REAL,
+    importance TEXT,
     fetched_at   TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
     processed    INTEGER DEFAULT 0,
     agent_source TEXT
