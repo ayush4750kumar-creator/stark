@@ -237,9 +237,17 @@ async function fetchStockNewsNow(symbol, company) {
 
   const all = [...yahoo, ...google, ...indian, ...etSearch, ...finnhub, ...alphaVantage, ...bing];
 
+  // ── Relevance filter: only keep articles that mention the company/symbol ──
+  const symClean   = symbol.replace(".NS","").replace(".BO","").toLowerCase();
+  const nameWords  = company.toLowerCase().split(" ").filter(w => w.length > 3);
+  const relevant = all.filter(a => {
+    const hl = (a.headline + " " + (a.full_text || "")).toLowerCase();
+    return hl.includes(symClean) || nameWords.some(w => hl.includes(w));
+  });
+
   // Deduplicate by headline
   const seen = new Set();
-  const unique = all.filter(a => {
+  const unique = relevant.filter(a => {
     const key = a.headline.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60);
     if (seen.has(key)) return false;
     seen.add(key); return true;
