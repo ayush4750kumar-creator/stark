@@ -26,6 +26,14 @@ function sentimentDirection(text) {
   return "neutral";
 }
 
+// Truncate text to approximately N words
+function truncateWords(text, n) {
+  if (!text) return "";
+  const words = text.trim().split(/\s+/);
+  if (words.length <= n) return text;
+  return words.slice(0, n).join(" ") + "…";
+}
+
 const IMG_DB = {
   banking: [
     "https://images.pexels.com/photos/6801640/pexels-photo-6801640.jpeg?w=700",
@@ -277,6 +285,11 @@ function getTopicImageUrl(headline, symbol) {
   return `https://loremflickr.com/700/400/${query}?lock=${sig}`;
 }
 
+// Sky blue active color
+const SKY_BLUE = "#38bdf8";
+const SKY_BLUE_BG = "rgba(56,189,248,0.15)";
+const SKY_BLUE_BORDER = "rgba(56,189,248,0.35)";
+
 export default function NewsCard({ news, index, onTrack, trackedSymbols = [], onAboutCompany }) {
   const navigate    = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -291,13 +304,21 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
 
-  // Always show summary as-is — no echo filtering
   const shortSummary = news.summary_20 || news.summary || null;
   const longSummary  = news.summary_long || null;
   const sentiment    = news.sentiment || null;
   const sentDir      = sentimentDirection(sentiment);
+
   // Show "more" pill if there's sentiment or long summary to expand into
-  const hasMore      = !!(sentiment || longSummary);
+  const hasMore = !!(sentiment || longSummary || shortSummary);
+
+  // Collapsed: show ~10 words of summary. Expanded: show full summary (longSummary or shortSummary, 50-60 words)
+  const collapsedPreview = shortSummary ? truncateWords(shortSummary, 10) : null;
+  const expandedSummary  = longSummary
+    ? truncateWords(longSummary, 60)
+    : shortSummary
+      ? truncateWords(shortSummary, 60)
+      : null;
 
   function openSource() {
     const url = news.sourceUrl || news.source_url;
@@ -335,13 +356,11 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         animation: `fadeIn 0.4s ease forwards`,
         animationDelay: `${index * 0.06}s`,
         opacity: 0,
-        cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         minHeight: 320,
         position: "relative",
       }}
-      onClick={openSource}
     >
       {/* Sentiment pill — top-left */}
       {sentDir !== "neutral" && (
@@ -360,6 +379,36 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
           {sentDir === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
         </div>
       )}
+
+      {/* Read button — permanent, top-right corner */}
+      <button
+        onClick={e => { e.stopPropagation(); openSource(); }}
+        style={{
+          position: "absolute", top: 12, right: 12, zIndex: 10,
+          background: "rgba(0,0,0,0.45)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,0.22)",
+          borderRadius: 20, padding: "4px 12px",
+          fontSize: 11, fontWeight: 700,
+          fontFamily: "var(--font-display)",
+          color: "rgba(255,255,255,0.85)",
+          cursor: "pointer",
+          letterSpacing: "0.04em",
+          transition: "background 0.2s, color 0.2s",
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.background = SKY_BLUE_BG;
+          e.currentTarget.style.color = SKY_BLUE;
+          e.currentTarget.style.borderColor = SKY_BLUE_BORDER;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.background = "rgba(0,0,0,0.45)";
+          e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
+        }}
+      >
+        Read ↗
+      </button>
 
       {/* Background image */}
       <div style={{ position: "absolute", inset: 0 }}>
@@ -419,51 +468,55 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
           )}
         </div>
 
-        {/* Headline — exactly as-is from the article */}
+        {/* Headline — exactly as-is */}
         <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "rgba(255,255,255,0.95)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
           {news.headline}
         </p>
 
-        {/* Summary — always visible if it exists */}
-        {shortSummary && (
-          <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.62)", margin: "0 0 8px", fontFamily: "var(--font-body)" }}>
-            {shortSummary}
+        {/* Summary preview — collapsed: ~10 words */}
+        {collapsedPreview && !expanded && (
+          <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.55)", margin: "0 0 6px", fontFamily: "var(--font-body)" }}>
+            {collapsedPreview}
           </p>
         )}
 
-        {/* "more" / "less" pill — only shown if there's extra content to expand */}
+        {/* "more" / "less" pill */}
         {hasMore && (
           <button
             onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
             style={{
               display: "inline-flex", alignItems: "center", gap: 4,
-              background: "none", border: "none", padding: "0 0 8px",
+              background: expanded ? SKY_BLUE_BG : "none",
+              border: expanded ? `1px solid ${SKY_BLUE_BORDER}` : "none",
+              borderRadius: expanded ? 20 : 0,
+              padding: expanded ? "2px 10px 2px" : "0 0 8px",
               fontSize: 11, fontWeight: 700,
               fontFamily: "var(--font-display)",
-              color: "rgba(255,255,255,0.32)",
+              color: expanded ? SKY_BLUE : "rgba(255,255,255,0.32)",
               cursor: "pointer",
               letterSpacing: "0.04em",
-              transition: "color 0.2s",
+              transition: "color 0.2s, background 0.2s",
+              marginBottom: expanded ? 6 : 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.65)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.32)"}
+            onMouseEnter={e => { if (!expanded) e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
+            onMouseLeave={e => { if (!expanded) e.currentTarget.style.color = "rgba(255,255,255,0.32)"; }}
           >
             {expanded ? "▲ less" : "▼ more"}
           </button>
         )}
 
-        {/* Expanded section — slides open */}
+        {/* Expanded section */}
         <div style={{
           overflow: "hidden",
-          maxHeight: expanded ? "400px" : "0px",
+          maxHeight: expanded ? "500px" : "0px",
           transition: "max-height 0.35s ease",
         }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 10 }}>
 
-            {/* Long summary if any */}
-            {longSummary && (
-              <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.50)", margin: 0, fontFamily: "var(--font-body)" }}>
-                {longSummary}
+            {/* Full summary (50–60 words) */}
+            {expandedSummary && (
+              <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.62)", margin: 0, fontFamily: "var(--font-body)" }}>
+                {expandedSummary}
               </p>
             )}
 
@@ -495,13 +548,19 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
                   flex: 1, padding: "7px 0", borderRadius: 8,
                   fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
                   cursor: "pointer",
-                  background: "rgba(255,210,100,0.10)",
-                  border: "1px solid rgba(255,210,100,0.22)",
-                  color: "rgba(255,210,100,0.85)",
-                  transition: "background 0.2s",
+                  background: SKY_BLUE_BG,
+                  border: `1px solid ${SKY_BLUE_BORDER}`,
+                  color: SKY_BLUE,
+                  transition: "background 0.2s, color 0.2s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,210,100,0.20)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,210,100,0.10)"}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(56,189,248,0.28)";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = SKY_BLUE_BG;
+                  e.currentTarget.style.color = SKY_BLUE;
+                }}
               >
                 Read Article ↗
               </button>
@@ -511,13 +570,19 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
                   flex: 1, padding: "7px 0", borderRadius: 8,
                   fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
                   cursor: "pointer",
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.55)",
-                  transition: "background 0.2s",
+                  background: SKY_BLUE_BG,
+                  border: `1px solid ${SKY_BLUE_BORDER}`,
+                  color: SKY_BLUE,
+                  transition: "background 0.2s, color 0.2s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = "rgba(56,189,248,0.28)";
+                  e.currentTarget.style.color = "#fff";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = SKY_BLUE_BG;
+                  e.currentTarget.style.color = SKY_BLUE;
+                }}
               >
                 Stock Analysis →
               </button>
@@ -525,13 +590,6 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
 
           </div>
         </div>
-
-        {/* Tap to read — hidden when expanded (buttons take over) */}
-        {!expanded && (
-          <p style={{ fontSize: 11, color: "rgba(255,210,100,0.65)", fontFamily: "var(--font-display)", fontWeight: 600, margin: "0 0 12px", letterSpacing: "0.03em" }}>
-            Tap to read on {news.source || "source"} ↗
-          </p>
-        )}
 
         <div style={{ height: 8 }} />
       </div>
