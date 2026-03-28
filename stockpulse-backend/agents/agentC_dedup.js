@@ -45,7 +45,7 @@ async function runAgentC(limit = 200) {
   const articles = db.prepare(`
     SELECT id, headline, symbol, company, full_text, source_url
     FROM articles
-    WHERE processed = 0 AND headline IS NOT NULL
+    WHERE (processed = 0 OR processed IS NULL) AND headline IS NOT NULL
     ORDER BY id DESC LIMIT ?
   `).all(limit);
 
