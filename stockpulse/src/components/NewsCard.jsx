@@ -310,6 +310,46 @@ function getUnsplashUrl(headline, symbol) {
   return `https://source.unsplash.com/700x400/?stock,market,finance&sig=${Math.abs((headline||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0))}`;
 }
 
+
+function getTopicImageUrl(headline, symbol) {
+  const hl = (headline || "").toLowerCase();
+  
+  const TOPIC_QUERIES = {
+    banking:        "bank,finance,money",
+    tech:           "technology,computer,digital",
+    energy:         "oil,energy,solar",
+    auto:           "automobile,car,vehicle",
+    pharma:         "medicine,healthcare,hospital",
+    retail:         "shopping,retail,store",
+    fmcg:           "consumer,products,grocery",
+    realestate:     "realestate,property,building",
+    infrastructure: "infrastructure,construction,bridge",
+    india:          "india,economy,city",
+    market:         "stockmarket,trading,finance",
+    conglomerate:   "business,corporate,industry",
+  };
+
+  let topic = "market";
+  for (const rule of SUBTOPIC_RULES) {
+    if (rule.keys.some(k => hl.includes(k))) { topic = rule.pool; break; }
+  }
+
+  const SYMBOL_MAP = {
+    RELIANCE:"energy", TCS:"tech", INFY:"tech", HDFCBANK:"banking", ICICIBANK:"banking",
+    WIPRO:"tech", BAJFINANCE:"banking", SBIN:"banking", TATAMOTORS:"auto", MARUTI:"auto",
+    ONGC:"energy", ADANIENT:"conglomerate", SUNPHARMA:"pharma", ITC:"fmcg",
+    AAPL:"tech", MSFT:"tech", GOOGL:"tech", NVDA:"tech", TSLA:"auto",
+    META:"tech", AMZN:"retail", JPM:"banking",
+  };
+
+  const sym = (symbol||"").replace(/\.NS$|\.BO$/,"").toUpperCase();
+  if (!topic || topic === "market") topic = SYMBOL_MAP[sym] || "market";
+
+  const query = TOPIC_QUERIES[topic] || "stockmarket,finance";
+  const sig = Math.abs((headline||"").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 1000;
+  return `https://loremflickr.com/700/400/${query}?lock=${sig}`;
+}
+
 export default function NewsCard({ news, index, onTrack, trackedSymbols = [], onAboutCompany }) {
   const navigate    = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -319,7 +359,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
   const changeSign  = (news.change ?? 0) >= 0 ? "+" : "";
   const imgUrl      = news.hasImage && news.image
     ? news.image
-    : getUnsplashUrl(news.headline, news.symbol);
+    : getTopicImageUrl(news.headline, news.symbol);
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
 
@@ -403,10 +443,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
             e.target.onerror = null;
             const attempts = parseInt(e.target.dataset.attempt || "0") + 1;
             e.target.dataset.attempt = attempts;
-            e.target.src = getTopicImage(
-              news.headline, news.symbol,
-              String((parseInt(news.id || 0) + attempts * 13) ^ (attempts * 7919))
-            );
+            e.target.src = getTopicImageUrl(news.headline, news.symbol);
           }}
         />
         <div style={{
