@@ -137,7 +137,7 @@ function makeDB(pool) {
           const params = flattenParams(args);
           const finalSql =
             pgSql.match(/^INSERT/i) && !pgSql.includes("RETURNING")
-              ? pgSql + " RETURNING id"
+              ? pgSql + " RETURNING *"
               : pgSql;
           try {
             const res = await pool.query(finalSql, params);
