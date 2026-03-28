@@ -10,11 +10,11 @@ const JWT_SECRET  = process.env.JWT_SECRET || "stockpulse_jwt_secret_changeme";
 const SALT_ROUNDS = 10;
 
 // ── Brevo email client ─────────────────────────────────────────
-const brevoClient = new Brevo.TransactionalEmailsApi();
-brevoClient.authentications["apiKey"].apiKey = process.env.BREVO_API_KEY;
+const brevoClient = new SibApiV3Sdk.TransactionalEmailsApi();
+brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
 
 async function sendOTP(email, name, otp) {
-  const sendSmtpEmail = new Brevo.SendSmtpEmail();
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
   sendSmtpEmail.to = [{ email, name }];
   sendSmtpEmail.sender = { email: "noreply@gramble.in", name: "Gramble" };
   sendSmtpEmail.subject = "Your Gramble verification code";
