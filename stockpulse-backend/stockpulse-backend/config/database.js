@@ -110,6 +110,7 @@ const SCHEMA = `
     UNIQUE(symbol, period_type, period)
   );
   CREATE INDEX IF NOT EXISTS idx_art_sym  ON articles(symbol);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_art_headline_sym ON articles(symbol, LOWER(SUBSTR(headline, 1, 80)));
   CREATE INDEX IF NOT EXISTS idx_art_proc ON articles(processed);
   CREATE INDEX IF NOT EXISTS idx_ph_sym   ON price_history(symbol);
 `;
