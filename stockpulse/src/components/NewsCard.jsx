@@ -282,6 +282,34 @@ function getTopicImage(headline, symbol, articleId) {
   return fallback;
 }
 
+
+const TOPIC_KEYWORDS = {
+  banking:        "bank finance money",
+  tech:           "technology computer digital",
+  energy:         "oil energy solar power",
+  auto:           "automobile car vehicle",
+  pharma:         "medicine healthcare hospital",
+  retail:         "shopping retail store",
+  fmcg:           "consumer goods products",
+  realestate:     "real estate property building",
+  infrastructure: "infrastructure construction bridge",
+  india:          "india economy rupee",
+  market:         "stock market trading finance",
+  conglomerate:   "business corporate industry",
+};
+
+function getUnsplashUrl(headline, symbol) {
+  const hl = (headline || "").toLowerCase();
+  for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
+    for (const rule of SUBTOPIC_RULES) {
+      if (rule.pool === topic && rule.keys.some(k => hl.includes(k))) {
+        return `https://source.unsplash.com/700x400/?${encodeURIComponent(keywords)}&sig=${Math.abs(headline.split("").reduce((a,c)=>a+c.charCodeAt(0),0))}`;
+      }
+    }
+  }
+  return `https://source.unsplash.com/700x400/?stock,market,finance&sig=${Math.abs((headline||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0))}`;
+}
+
 export default function NewsCard({ news, index, onTrack, trackedSymbols = [], onAboutCompany }) {
   const navigate    = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -291,7 +319,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
   const changeSign  = (news.change ?? 0) >= 0 ? "+" : "";
   const imgUrl      = news.hasImage && news.image
     ? news.image
-    : getTopicImage(news.headline, news.symbol, news.id);
+    : getUnsplashUrl(news.headline, news.symbol);
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
 
