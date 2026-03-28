@@ -58,7 +58,7 @@ async function runAgent4(limit = 30) {
   const { rows: articles } = await db.query(`
     SELECT id, headline, full_text
     FROM articles
-    WHERE processed = 1 AND summary IS NULL AND headline IS NOT NULL
+    WHERE processed = 1 AND summary_20 IS NULL AND headline IS NOT NULL
     ORDER BY id DESC
     LIMIT $1
   `, [limit]);
@@ -77,7 +77,7 @@ async function runAgent4(limit = 30) {
 
       await db.query(`
         UPDATE articles
-        SET summary = $1, sentiment = $2, processed = 2
+        SET summary_20 = $1, sentiment = $2, processed = 2
         WHERE id = $3
       `, [summary, sentiment, article.id]);
 
