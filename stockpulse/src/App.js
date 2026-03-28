@@ -137,35 +137,65 @@ function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar 
 }
 
 // ── Inline auth modal ─────────────────────────────────────────────────────
+// ── Inline auth modal ─────────────────────────────────────────────────────
 function AuthModal({ onLogin, onClose }) {
-  const [mode, setMode]         = useState("signup");
-  const [name, setName]         = useState("");
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [mode, setMode]             = useState("signup");
+  const [step, setStep]             = useState("form");
+  const [name, setName]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [otp, setOtp]               = useState("");
+  const [error, setError]           = useState("");
+  const [loading, setLoading]       = useState(false);
 
   const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
 
   const submit = async () => {
     setError(""); setLoading(true);
     try {
-      const body = mode === "signup" ? { name, email, password } : { email, password };
-      const res  = await fetch(`${API}/${mode === 'signup' ? 'signup' : 'login'}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      if (mode === "signup") {
+        if (!name || !email || !password || !confirmPass)
+          return setError("All fields are required.");
+        if (password !== confirmPass)
+          return setError("Passwords do not match.");
+        if (password.length < 6)
+          return setError("Password must be at least 6 characters.");
+        const res  = await fetch(`${API}/signup`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json();
+        if (data.success) { setStep("otp"); }
+        else setError(data.error || "Something went wrong.");
+      } else {
+        const res  = await fetch(`${API}/login`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem("sp_token", data.token || "");
+          onLogin({ ...data.user, token: data.token });
+        } else setError(data.error || "Something went wrong.");
+      }
+    } catch { setError("Network error. Please try again."); }
+    setLoading(false);
+  };
+
+  const verifyOtp = async () => {
+    setError(""); setLoading(true);
+    try {
+      const res  = await fetch(`${API}/verify-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("sp_token", data.token || data.user?.token || "");
-        onLogin({ ...data.user, token: data.token || data.user?.token });
-      } else {
-        setError(data.message || "Something went wrong.");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    }
+        localStorage.setItem("sp_token", data.token || "");
+        onLogin({ ...data.user, token: data.token });
+      } else setError(data.error || "Invalid code.");
+    } catch { setError("Network error. Please try again."); }
     setLoading(false);
   };
 
@@ -177,288 +207,81 @@ function AuthModal({ onLogin, onClose }) {
     transition: "border-color 0.15s", background: "#fff",
   };
 
-  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); };
+  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); setConfirmPass(""); setStep("form"); };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: 360, height: 360,
-          borderRadius: 18, background: "#fff",
-          border: `2px solid ${GB}`,
-          boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`,
-          display: "flex", flexDirection: "column",
-          overflow: "hidden", position: "relative",
-        }}
-      >
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 360, borderRadius: 18, background: "#fff", border: `2px solid ${GB}`, boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
         <div style={{ height: 4, background: `linear-gradient(90deg, ${GB}, ${GB2})`, flexShrink: 0 }} />
-        <button onClick={onClose} style={{
-          position: "absolute", top: 12, right: 12,
-          width: 24, height: 24, borderRadius: "50%",
-          background: GBBG, border: `1px solid ${GB}`,
-          cursor: "pointer", fontSize: 11, color: GB2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 700,
-        }}>✕</button>
-
-        <div style={{
-          flex: 1, display: "flex", flexDirection: "column",
-          padding: "14px 24px 18px", gap: 9,
-        }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, width: 24, height: 24, borderRadius: "50%", background: GBBG, border: `1px solid ${GB}`, cursor: "pointer", fontSize: 11, color: GB2, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>✕</button>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "14px 24px 18px", gap: 9 }}>
           <div style={{ textAlign: "center" }}>
             <GrambleLogo size={22} />
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Outfit', sans-serif", fontWeight: 500, marginTop: 3 }}>
-              {mode === "signup" ? "Create your account" : "Welcome back"}
+              {step === "otp" ? "Check your email" : mode === "signup" ? "Create your account" : "Welcome back"}
             </div>
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {mode === "signup" && (
-              <input
-                placeholder="Full name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = GB}
-                onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-              />
-            )}
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = GB}
-              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && submit()}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = GB}
-              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-            />
-          </div>
-
-          {error && (
-            <div style={{
-              fontSize: 11, color: "#e53e3e",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 500,
-              background: "#fff5f5", padding: "5px 10px", borderRadius: 6,
-            }}>{error}</div>
+          {step === "otp" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontFamily: "'Outfit', sans-serif", textAlign: "center" }}>
+                We sent a 6-digit code to <strong>{email}</strong>
+              </div>
+              <input placeholder="Enter 6-digit code" value={otp} onChange={e => setOtp(e.target.value)} onKeyDown={e => e.key === "Enter" && verifyOtp()} maxLength={6}
+                style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 8, fontWeight: 700 }}
+                onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
+              <button onClick={verifyOtp} disabled={loading} style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5 }}>
+                {loading ? "Verifying…" : "Verify & Sign In"}
+              </button>
+              <div style={{ textAlign: "center" }}>
+                <span onClick={() => { setStep("form"); setOtp(""); setError(""); }} style={{ fontSize: 12, color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "'Outfit', sans-serif" }}>← Back</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                {mode === "signup" && (
+                  <input placeholder="Full name" value={name} onChange={e => setName(e.target.value)} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+                )}
+                <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                  onKeyDown={e => e.key === "Enter" && mode === "login" && submit()} />
+                {mode === "signup" && (
+                  <input type="password" placeholder="Confirm password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    onKeyDown={e => e.key === "Enter" && submit()} />
+                )}
+              </div>
+              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
+              <button onClick={submit} disabled={loading}
+                style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5, transition: "background 0.15s" }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
+                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}>
+                {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
+              </button>
+              <div style={{ textAlign: "center" }}>
+                {mode === "signup" ? (
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                    Already have an account?{" "}
+                    <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Log in</span>
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                    New here?{" "}
+                    <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Create a new account</span>
+                  </span>
+                )}
+              </div>
+            </>
           )}
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            style={{
-              padding: "10px", borderRadius: 9, border: "none",
-              background: loading ? GB2 : GB, color: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}
-          >
-            {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
-          </button>
-
-          <div style={{ textAlign: "center" }}>
-            {mode === "signup" ? (
-              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                Already have an account?{" "}
-                <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
-                  Log in
-                </span>
-              </span>
-            ) : (
-              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                New here?{" "}
-                <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
-                  Create a new account
-                </span>
-              </span>
-            )}
-          </div>
         </div>
       </div>
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Layout({ user, onLogin, onLogout }) {
-  const [trackedStocks, setTrackedStocks] = useState([]);
-  const [overlay, setOverlay]             = useState(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-
-  const PATH_TITLES = {
-    "/fo/stocks":         "F&O Stocks",
-    "/fo/commodities":    "Commodities",
-    "/screener/intraday": "Intraday Screener",
-    "/screener/etf":      "ETF Screener",
-    "/screener/indices":  "Indices Screener",
-    "/mf/screener":       "Mutual Funds Screener",
-    "/mf/compare":        "Compare Mutual Funds",
-    "/more/ipo":          "IPO",
-    "/more/etfs":         "Global ETFs",
-    "/more/bonds":        "Bonds",
-    "/more/crypto":       "Crypto",
-  };
-
-  useEffect(() => {
-    window.__setOverlay = (path) => setOverlay({ path, title: PATH_TITLES[path] || path });
-    return () => { delete window.__setOverlay; };
-  }, []);
-
-  const fetchedAt  = useRef({});
-  const [activeFilter, setActiveFilter] = useState("global");
-  const [activeStock, setActiveStock]   = useState(null);
-  const [isMobile, setIsMobile]         = useState(window.innerWidth < 900);
-  const location = useLocation();
-  const isDetail = location.pathname.includes("/news/") || location.pathname.includes("/stock/");
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 900);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-
-  useEffect(() => {
-    async function bootStocks() {
-      let symbolsToLoad = DEFAULT_SYMBOLS;
-      if (user?.token) {
-        try {
-          const res  = await fetch(`${BACKEND}/auth/watchlist`, { headers: { Authorization: `Bearer ${user.token}` } });
-          const data = await res.json();
-          if (data.success && data.data?.length) symbolsToLoad = data.data;
-        } catch {}
-      } else {
-        try {
-          const saved = localStorage.getItem("sp_tracked_guest");
-          if (saved) symbolsToLoad = JSON.parse(saved);
-        } catch {}
-      }
-      const loaded = [];
-      for (const sym of symbolsToLoad) {
-        try {
-          const res  = await fetch(`${BACKEND}/stocks/${sym}`);
-          const data = await res.json();
-          if (data.success && data.data) {
-            loaded.push({
-              symbol: data.data.symbol, name: data.data.name,
-              sector: data.data.sector || "Stock", price: data.data.price,
-              change: data.data.change_amt, changePct: data.data.change_pct,
-              change_pct: data.data.change_pct, currency: data.data.currency,
-            });
-          }
-        } catch {}
-      }
-      if (loaded.length > 0) {
-        setTrackedStocks(loaded);
-        for (const s of loaded) {
-          fetchedAt.current[s.symbol] = Date.now();
-          fetch(`${BACKEND}/news/fetch-stock`, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ symbol: s.symbol, company: s.name }),
-          }).catch(() => {});
-        }
-      }
-    }
-    bootStocks();
-  }, [user?.token]);
-
-  const refreshPrices = useCallback(async () => {
-    if (trackedStocks.length === 0) return;
-    try {
-      const res  = await fetch(`${BACKEND}/stocks`);
-      const data = await res.json();
-      if (!data.success || !data.data?.length) return;
-      const liveMap = {};
-      data.data.forEach(s => { liveMap[s.symbol] = s; });
-      setTrackedStocks(prev => prev.map(stock => {
-        const live = liveMap[stock.symbol];
-        if (!live || !live.price) return stock;
-        return { ...stock, price: live.price, change: live.change_amt, changePct: live.change_pct, change_pct: live.change_pct };
-      }));
-    } catch {}
-  }, [trackedStocks.length]);
-
-  useEffect(() => {
-    refreshPrices();
-    const interval = setInterval(refreshPrices, PRICE_REFRESH);
-    return () => clearInterval(interval);
-  }, [refreshPrices]);
-
-  useEffect(() => {
-    if (user?.token || trackedStocks.length === 0) return;
-    try { localStorage.setItem("sp_tracked_guest", JSON.stringify(trackedStocks.map(s => s.symbol))); } catch {}
-  }, [trackedStocks, user?.token]);
-
-  const addTracked = useCallback(async (stockOrSymbol) => {
-    if (!user) { setShowLoginModal(true); return; }
-    let stock = typeof stockOrSymbol === "string"
-      ? { symbol: stockOrSymbol, name: stockOrSymbol } : stockOrSymbol;
-    if (!stock?.symbol) return;
-    try {
-      const res  = await fetch(`${BACKEND}/stocks/${stock.symbol}`);
-      const data = await res.json();
-      if (data.success && data.data) {
-        stock = {
-          symbol: data.data.symbol, name: data.data.name || stock.name,
-          sector: data.data.sector || stock.sector || "Stock",
-          price: data.data.price, change: data.data.change_amt,
-          changePct: data.data.change_pct, change_pct: data.data.change_pct,
-          currency: data.data.currency,
-        };
-      }
-    } catch {}
-    setTrackedStocks(prev => {
-      if (prev.find(s => s.symbol === stock.symbol)) return prev;
-      return [...prev, stock];
-    });
-    if (user?.token) {
-      try {
-        await fetch(`${BACKEND}/auth/watchlist`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
-          body: JSON.stringify({ symbol: stock.symbol }),
-        });
-      } catch {}
-    }
-    setActiveFilter(stock.symbol);
-    setActiveStock(stock);
-    triggerInstantFetch(stock.symbol, stock.name);
-  }, [user]);
-
-  function triggerInstantFetch(symbol, name) {
-    const CACHE_MS = 5 * 60 * 1000;
-    const last = fetchedAt.current[symbol] || 0;
-    if (Date.now() - last < CACHE_MS) return;
-    fetchedAt.current[symbol] = Date.now();
-    fetch(`${BACKEND}/news/fetch-stock`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol, company: name }),
-    }).catch(() => {});
-  }
-
-  const removeTracked = async (symbol) => {
-    setTrackedStocks(prev => prev.filter(s => s.symbol !== symbol));
-    if (activeFilter === symbol) setActiveFilter("global");
     if (user?.token) {
       try {
         await fetch(`${BACKEND}/auth/watchlist/${symbol}`, { method: "DELETE", headers: { Authorization: `Bearer ${user.token}` } });
