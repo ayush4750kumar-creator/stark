@@ -169,6 +169,13 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
           const sym = activeFilter;
           setFetchingNews(true);
 
+          const stockForFetch = activeStock || STOCKS.find(s => s.symbol === sym);
+          const companyForFetch = stockForFetch?.name || sym;
+          fetch(`${BACKEND}/news/fetch-stock`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol: sym, company: companyForFetch }),
+          }).catch(() => {});
           fetch(`${BACKEND}/fetch/category`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

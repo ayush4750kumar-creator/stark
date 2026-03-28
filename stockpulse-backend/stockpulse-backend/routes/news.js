@@ -161,7 +161,17 @@ router.post("/fetch-stock", async (req, res) => {
   try {
     const { fetchStockNewsNow } = require("../agents/fetchStockNews");
     // Don't await — respond immediately, fetch runs in background
-    fetchStockNewsNow(symbol.toUpperCase(), company || symbol)
+    // Look up company name from stocks table if not provided
+    let companyName = company;
+    if (!companyName || companyName === symbol) {
+      try {
+        const { getDB } = require("../config/database");
+        const row = await getDB().prepare("SELECT name FROM stocks WHERE symbol = $1 LIMIT 1").get(symbol.toUpperCase());
+        if (row && row.name) companyName = row.name;
+      } catch(ex) {}
+    }
+    companyName = companyName || symbol;
+    fetchStockNewsNow(symbol.toUpperCase(), companyName)
       .catch(e => console.error("Instant fetch error:", e.message));
 
     res.json({ success: true, message: `Fetching news for ${symbol} in background` });
