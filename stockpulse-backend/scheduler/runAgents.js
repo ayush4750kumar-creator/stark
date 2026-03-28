@@ -1,39 +1,32 @@
 require("dotenv").config();
 const cron = require("node-cron");
-const { runAgentA } = require("../agents/agentA");
-const { runAgentB } = require("../agents/agentB");
-const { runAgentE } = require("../agents/agentE_importance");
-const { runAgentF } = require("../agents/agentF_summarizer");
-const { runAgentC } = require("../agents/agentC_dedup");
-const { runAgentD } = require("../agents/agentD_rewriter");
+const { runAgent1 } = require("../agents/agent1_global");
+const { runAgent2 } = require("../agents/agent2_india");
+const { runAgent3 } = require("../agents/agent3_classify");
+const { runAgent4 } = require("../agents/agent4_summarize");
+const { runAgent5 } = require("../agents/agent5_images");
 const { refreshAllPrices } = require("../services/stockPriceService");
-const { prefetchAll } = require("../services/financialsService");
-const { runBatch: runSentimentBatch } = require("../services/sentimentService");
 
 async function runNewsPipeline() {
   console.log("\n" + "═".repeat(50));
-  console.log("📰 NEWS FETCH:", new Date().toLocaleString());
+  console.log("📰 NEWS PIPELINE:", new Date().toLocaleString());
   console.log("═".repeat(50));
   try {
-    await runAgentA();
-    await runAgentB();
+    await runAgent1();
+    await runAgent2();
 
-    console.log("\n🔍 Running AgentC (dedup + tag)...");
-    try { await runAgentC(300); } catch(e) { console.error("❌ AgentC error:", e.message); }
+    console.log("\n🔍 Running Agent3 (classify)...");
+    try { await runAgent3(500); } catch(e) { console.error("❌ Agent3 error:", e.message); }
 
-    console.log("\n🎯 Running AgentE (importance filter)...");
-    try { await runAgentE(50); } catch(e) { console.error("❌ AgentE error:", e.message); }
+    console.log("\n✍  Running Agent4 (summarize)...");
+    try { await runAgent4(30); } catch(e) { console.error("❌ Agent4 error:", e.message); }
 
-    console.log("\n✍  Running AgentF (summarizer)...");
-    try { await runAgentF(20); } catch(e) { console.error("❌ AgentF error:", e.message); }
+    console.log("\n🖼  Running Agent5 (images)...");
+    try { await runAgent5(50); } catch(e) { console.error("❌ Agent5 error:", e.message); }
 
-    console.log("✅ News fetch + AI pipeline complete\n");
-
-    setTimeout(() => {
-      runSentimentBatch(80).catch(e => console.error("❌ Sentiment error:", e.message));
-    }, 3000);
+    console.log("\n✅ News pipeline complete\n");
   } catch (err) {
-    console.error("❌ News fetch error:", err.message);
+    console.error("❌ Pipeline error:", err.message);
   }
 }
 
@@ -45,41 +38,20 @@ async function runPricePipeline() {
 }
 
 function startScheduler() {
-  const newsMin  = parseInt(process.env.AGENT_RUN_INTERVAL) || 2;
+  const newsMin  = parseInt(process.env.AGENT_RUN_INTERVAL) || 5;
   const priceSec = 120;
 
   console.log("⏰ Scheduler started");
   console.log(`   Price refresh: every 2 min`);
-  console.log(`   News fetch:    every ${newsMin} min`);
-  console.log("   AI pipeline:   AgentC → AgentE → AgentF after every fetch\n");
+  console.log(`   News pipeline: every ${newsMin} min`);
+  console.log("   Flow: Agent1 → Agent2 → Agent3 → Agent4 → Agent5\n");
 
   setTimeout(() => {
     runPricePipeline().then(() => runNewsPipeline());
   }, 2000);
 
-  setTimeout(() => {
-    console.log("  🧠 Startup sentiment analysis...");
-    runSentimentBatch(200).catch(e => console.error("❌ Sentiment startup error:", e.message));
-  }, 15000);
-
   setInterval(() => runPricePipeline(), priceSec * 1000);
-
   cron.schedule(`*/${newsMin} * * * *`, () => runNewsPipeline());
-
-  cron.schedule("*/10 * * * *", () => {
-    runSentimentBatch(30).catch(e => console.error("❌ Sentiment error:", e.message));
-  });
-
-  cron.schedule("30 * * * *", async () => {
-    console.log("\n✍  AgentD (hourly Gemini rewriter)...");
-    try { await runAgentD(10); } catch(e) { console.error("❌ AgentD error:", e.message); }
-  });
-
-  cron.schedule("30 22 * * *", async () => {
-    console.log("\n📊 NIGHTLY FINANCIALS PRE-FETCH:", new Date().toLocaleString());
-    try { await prefetchAll(); }
-    catch (e) { console.error("❌ Financials pre-fetch error:", e.message); }
-  });
 
   cron.schedule("0 0 * * *", async () => {
     try {
@@ -87,7 +59,7 @@ function startScheduler() {
       const result = await getDB().query(
         "DELETE FROM articles WHERE published_at < NOW() - INTERVAL '30 days'"
       );
-      console.log(`\n🗑  Cleanup: deleted ${result.rowCount} articles older than 30 days`);
+      console.log(`\n🗑  Cleanup: deleted ${result.rowCount} old articles`);
     } catch (e) {
       console.error("❌ Cleanup error:", e.message);
     }
