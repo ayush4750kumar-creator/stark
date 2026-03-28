@@ -7,7 +7,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getDB } = require("../config/database");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 const NOISE_SOURCES = ["reddit.com", "twitter.com", "x.com", "quora.com", "blogspot.com", "wordpress.com"];
 
