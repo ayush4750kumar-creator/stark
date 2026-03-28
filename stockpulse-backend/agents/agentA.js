@@ -27,12 +27,12 @@ const JUNK_PATTERNS = [
   /entering text into/i, /search result below/i, /update the search/i,
   /sign up for/i, /subscribe to/i, /click here to/i,
   /get daily.*newsletter/i, /packed with expert/i,
-  /press release.*\(/i,   // "Company press release (TICK): ..."  — raw PR dumps
-  /^\s*q\d (revenue|earnings|eps|results)/i, // bare earnings line items without context
+  /press release.*\(/i,
+  /^\s*q\d (revenue|earnings|eps|results)/i,
   /seeking alpha on google/i, /latest stock news$/i,
   /new opportunities\./i, /fresh ideas/i,
-  /rssfeed/i, /no description/i,
-  /^[\s\W]{0,5}$/, // empty or punctuation only
+  /rssfeed/i, /no description/i,
+  /^[\s\W]{0,5}$/,
 ];
 
 function isJunk(headline) {
@@ -45,10 +45,21 @@ async function saveArticle(article) {
     const info = await db().prepare(`
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
-      VALUES (?,?,?,?,?,?,?,?,?,'agentA')
-    `).run([article.uuid, article.symbol, article.company, article.headline, article.full_text, article.source, article.source_url, article.image_url, article.published_at]);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'agentA')
+      ON CONFLICT (uuid) DO NOTHING
+    `).run(
+      article.uuid,
+      article.symbol,
+      article.company,
+      article.headline,
+      article.full_text,
+      article.source,
+      article.source_url,
+      article.image_url,
+      article.published_at
+    );
     return info.changes > 0;
-  } catch(err) { console.error("AgentA FULL error:", err); return false; }
+  } catch(err) { console.error("AgentA DB error:", err.message); return false; }
 }
 
 function detectStock(text) {

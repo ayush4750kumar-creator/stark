@@ -23,7 +23,7 @@ const SCHEMA = `
     published_at TIMESTAMPTZ,
     sentiment    TEXT,
     sentiment_score REAL,
-    importance TEXT,
+    importance   TEXT,
     fetched_at   TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
     processed    INTEGER DEFAULT 0,
     agent_source TEXT
@@ -136,6 +136,22 @@ let _db = null;
 async function initDB() {
   if (_db) return _db;
   await pool.query(SCHEMA);
+
+  // Safe migrations — adds missing columns without data loss
+  await pool.query(`
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS uuid            TEXT;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS summary_long    TEXT;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance      TEXT;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS company         TEXT;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS sentiment_score REAL;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS agent_source    TEXT;
+  `).catch(e => console.warn("⚠ Migration warning:", e.message));
+
+  // Add unique index on uuid so ON CONFLICT (uuid) works
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_art_uuid ON articles(uuid) WHERE uuid IS NOT NULL;
+  `).catch(e => console.warn("⚠ Index warning:", e.message));
+
   console.log("✅ PostgreSQL database ready");
   _db = makeDB();
   return _db;

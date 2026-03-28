@@ -282,6 +282,13 @@ function getTopicImage(headline, symbol, articleId) {
   return fallback;
 }
 
+// Sentiment badge config
+const SENTIMENT_CONFIG = {
+  bullish: { label: "▲ BULLISH", color: "#4ade80" },
+  bearish: { label: "▼ BEARISH", color: "#ff6b6b" },
+  neutral: { label: "◆ NEUTRAL", color: "rgba(255,255,255,0.45)" },
+};
+
 export default function NewsCard({ news, index, onTrack, trackedSymbols = [], onAboutCompany }) {
   const navigate    = useNavigate();
   const [expanded, setExpanded] = useState(false);
@@ -294,6 +301,12 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
     : getTopicImage(news.headline, news.symbol, news.id);
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
+
+  // Map API field names — backend sends summary_20 and summary_long
+  const shortSummary = news.summary_20 || news.summary || null;
+  const longSummary  = news.summary_long || null;
+  const sentiment    = news.sentiment || null;
+  const sentimentCfg = SENTIMENT_CONFIG[sentiment] || null;
 
   function openSource() {
     const url = news.sourceUrl || news.source_url;
@@ -308,10 +321,10 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         symbol:       news.symbol,
         company:      news.company,
         headline:     news.headline,
-        summary_20:   news.summary,
-        summary_long: news.summary_long || null,
+        summary_20:   shortSummary,
+        summary_long: longSummary,
         full_text:    news.fullText || news.summary || "",
-        sentiment:    news.sentiment,
+        sentiment:    sentiment,
         source:       news.source,
         source_url:   news.sourceUrl,
         image_url:    news.image,
@@ -394,7 +407,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         borderTop: "1px solid rgba(255,255,255,0.08)",
         padding: "14px 16px 0",
       }}>
-        {/* Meta row */}
+        {/* Meta row: time · source · sentiment badge */}
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7, flexWrap: "wrap" }}>
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{displayTime}</span>
           {news.source && (
@@ -403,44 +416,70 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{news.source}</span>
             </>
           )}
-          {(news.sentiment === "bullish" || news.sentiment === "bearish") && (
+          {sentimentCfg && (
             <>
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)" }}>·</span>
-              <span style={{ fontSize: 11, fontWeight: 700, fontFamily: "var(--font-display)", opacity: 0.9, color: news.sentiment === "bullish" ? "#4ade80" : "#ff6b6b" }}>
-                {news.sentiment === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
+              <span style={{
+                fontSize: 11, fontWeight: 700,
+                fontFamily: "var(--font-display)",
+                color: sentimentCfg.color,
+                opacity: 0.95,
+              }}>
+                {sentimentCfg.label}
               </span>
             </>
           )}
         </div>
 
-        {/* Headline */}
+        {/* Headline — unchanged */}
         <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "rgba(255,255,255,0.95)", margin: "0 0 7px", letterSpacing: "-0.01em" }}>
           {cleanHeadline(news.headline)}
         </p>
 
-        {/* Summary + expandable More */}
-        {news.summary && (
+        {/* Short summary (30-40 words) always visible */}
+        {shortSummary && (
           <div style={{ marginBottom: 7 }}>
             <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.65)", margin: "0 0 4px", fontFamily: "var(--font-body)" }}>
-              {news.summary}
+              {shortSummary}
             </p>
-            {news.summary_long && (
+
+            {/* Expandable long summary */}
+            {longSummary && (
               <>
-                {expanded && (
-                  <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.50)", margin: "6px 0 4px", fontFamily: "var(--font-body)" }}>
-                    {news.summary_long}
+                <div
+                  style={{
+                    overflow: "hidden",
+                    maxHeight: expanded ? "500px" : "0px",
+                    transition: "max-height 0.3s ease",
+                  }}
+                >
+                  <p style={{
+                    fontSize: 12, lineHeight: 1.7,
+                    color: "rgba(255,255,255,0.50)",
+                    margin: "6px 0 4px",
+                    fontFamily: "var(--font-body)",
+                  }}>
+                    {longSummary}
                   </p>
-                )}
+                </div>
+
                 <button
                   onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
                   style={{
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: 12, padding: "3px 10px",
-                    fontSize: 11, color: "rgba(255,255,255,0.55)",
-                    cursor: "pointer", fontFamily: "var(--font-display)",
-                    fontWeight: 600, marginBottom: 4,
+                    borderRadius: 12,
+                    padding: "3px 10px",
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.55)",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 600,
+                    marginBottom: 4,
+                    transition: "background 0.2s",
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.14)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
                 >
                   {expanded ? "▲ Less" : "▼ More"}
                 </button>

@@ -48,8 +48,19 @@ function saveArticle(article) {
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES
-        (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB')
-    `).run(article);
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'agentB')
+      ON CONFLICT (uuid) DO NOTHING
+    `).run(
+      article.uuid,
+      article.symbol,
+      article.company,
+      article.headline,
+      article.full_text,
+      article.source,
+      article.source_url,
+      article.image_url,
+      article.published_at
+    );
     return info.changes > 0;
   } catch (err) {
     console.error("AgentB DB error:", err.message);
@@ -76,7 +87,6 @@ async function fetchGNewsPerCompany() {
 
   const articles = [];
 
-  // Search each stock individually so we get targeted news
   for (const stock of INDIAN_STOCKS) {
     try {
       const query = `"${stock.name}" OR "${stock.symbol}"`;
@@ -96,10 +106,8 @@ async function fetchGNewsPerCompany() {
         });
       }
 
-      // GNews free tier: 100 req/day — space them out
       await new Promise(r => setTimeout(r, 400));
     } catch (err) {
-      // Don't log 403 spam — just count it silently
       if (!err.message.includes("403")) {
         console.error(`AgentB GNews error for ${stock.symbol}:`, err.message);
       }
@@ -198,8 +206,6 @@ async function runAgentB() {
   console.log("\n🇮🇳 AgentB starting — fetching Indian market news...");
   const startTime = Date.now();
 
-  // Run RSS immediately (fast, no rate limits)
-  // Run GNews in parallel (rate-limited internally)
   const [rss, gnewsCompany, gnewsBroad] = await Promise.all([
     fetchRSSFeeds(),
     fetchGNewsPerCompany(),
@@ -209,7 +215,9 @@ async function runAgentB() {
   const allArticles = [...rss, ...gnewsCompany, ...gnewsBroad];
   let saved = 0;
   for (const article of allArticles) {
-    if (saveArticle(article)) saved++;
+    if (!isJunk(article.headline)) {
+      if (saveArticle(article)) saved++;
+    }
   }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);

@@ -53,10 +53,10 @@ async function callGroq(prompt, retrying = false) {
       "https://api.groq.com/openai/v1/chat/completions",
       {
         model: "llama-3.1-8b-instant",
-        max_tokens: 250,
+        max_tokens: 350,
         temperature: 0.3,
         messages: [
-          { role: "system", content: "You are a financial news writer for beginner Indian retail investors. Always respond with valid JSON only. No markdown." },
+          { role: "system", content: "You are a financial news writer for beginner Indian retail investors. Always respond with valid JSON only. No markdown, no extra text." },
           { role: "user", content: prompt },
         ],
       },
@@ -91,33 +91,50 @@ ${context}
 Return JSON with these exact fields:
 {
   "simple_headline": "rewrite in plain English, max 10 words, no source names",
-  "short_summary": "2-3 sentences. What happened. Why it matters for the stock. What investors should watch. Simple words, no jargon.",
+  "short_summary": "Exactly 30-40 words. One punchy paragraph. What happened + whether it is good or bad for the stock + the sentiment in plain words. No jargon.",
+  "long_summary": "3-4 sentences. Full explanation: what happened, why it happened, what it means for the company, and what investors should watch next. Simple words only.",
   "sentiment": "bullish" or "bearish" or "neutral"
 }
-Return only valid JSON.`;
+Return only valid JSON. No markdown.`;
 
   const result = await callGroq(prompt);
 
   return {
     headline:     result?.simple_headline || headline,
     summary_20:   result?.short_summary   || headline,
+    summary_long: result?.long_summary    || null,
     sentiment:    result?.sentiment       || keywordSentiment(headline),
     image_url:    image || article.image_url || null,
     full_text:    fullText || article.full_text || "",
   };
 }
 
+// ── Reset all existing articles so they get re-summarized ─────
+async function resetArticles() {
+  const db = getDB();
+  await db.exec(`
+    UPDATE articles
+    SET processed = 0,
+        summary_20 = NULL,
+        summary_long = NULL
+    WHERE processed != 0
+  `);
+  console.log("  🔄 AgentF: reset all old articles for re-summarization");
+}
+
 // ── Main ──────────────────────────────────────────────────────
-async function runAgentF(limit = 20) {
+async function runAgentF(limit = 20, reset = false) {
   const db = getDB();
 
-  const articles = db.prepare(`
+  // Pass reset=true on first run to wipe old summaries
+  if (reset) await resetArticles();
+
+  const articles = await db.prepare(`
     SELECT id, headline, source_url, source, full_text, symbol, image_url
     FROM articles
     WHERE processed = 0
-      AND (importance IS NULL OR importance != 'noise')
       AND headline IS NOT NULL
-    ORDER BY id DESC LIMIT ?
+    ORDER BY id DESC LIMIT $1
   `).all(limit);
 
   if (!articles.length) return console.log("  ✓ AgentF: no articles to summarize");
@@ -131,18 +148,20 @@ async function runAgentF(limit = 20) {
     await Promise.all(batch.map(async (article) => {
       try {
         const result = await summarizeArticle(article);
-        db.prepare(`
+        await db.prepare(`
           UPDATE articles SET
-            headline     = ?,
-            summary_20   = ?,
-            sentiment    = ?,
-            full_text    = COALESCE(NULLIF(full_text,''), ?),
-            image_url    = COALESCE(NULLIF(image_url,''), ?),
+            headline     = $1,
+            summary_20   = $2,
+            summary_long = $3,
+            sentiment    = $4,
+            full_text    = COALESCE(NULLIF(full_text,''), $5),
+            image_url    = COALESCE(NULLIF(image_url,''), $6),
             processed    = 2
-          WHERE id = ?
+          WHERE id = $7
         `).run(
           result.headline,
           result.summary_20,
+          result.summary_long,
           result.sentiment,
           result.full_text,
           result.image_url,
@@ -151,7 +170,7 @@ async function runAgentF(limit = 20) {
         done++;
       } catch (err) {
         console.error(`  ⚠ AgentF error #${article.id}:`, err.message?.slice(0, 60));
-        db.prepare("UPDATE articles SET processed = 2 WHERE id = ?").run(article.id);
+        await db.prepare("UPDATE articles SET processed = 2 WHERE id = $1").run(article.id);
       }
     }));
     // 800ms between batches
@@ -161,4 +180,4 @@ async function runAgentF(limit = 20) {
   console.log(`  ✅ AgentF: summarized ${done} articles`);
 }
 
-module.exports = { runAgentF };
+module.exports = { runAgentF, resetArticles };
