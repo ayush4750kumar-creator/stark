@@ -172,3 +172,12 @@ router.post("/fetch-stock", async (req, res) => {
 
 
 module.exports = router;
+// Clear all articles
+router.delete("/clear-all", async (req, res) => {
+  try {
+    db().prepare("DELETE FROM articles").run();
+    res.json({ success: true, message: "All articles cleared" });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
