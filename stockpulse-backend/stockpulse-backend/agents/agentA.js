@@ -182,7 +182,12 @@ async function fetchStockRSS() {
   const results = await Promise.all(GLOBAL_STOCKS.slice(0, 8).map(async s => {
     const url = `https://finance.yahoo.com/rss/2.0/headline?s=${s.symbol}&region=US&lang=en-US`;
     const items = await fetchRSS(url, `Yahoo ${s.symbol}`, 10);
-    return items.map(a => ({ ...a, symbol: s.symbol, company: s.name }));
+    const symClean  = s.symbol.replace(".NS","").replace(".BO","").toLowerCase();
+    const nameWords = s.name.toLowerCase().split(" ").filter(w => w.length > 3);
+    return items.filter(a => {
+      const hl = (a.headline + " " + (a.full_text || "")).toLowerCase();
+      return hl.includes(symClean) || nameWords.some(w => hl.includes(w));
+    }).map(a => ({ ...a, symbol: s.symbol, company: s.name }));
   }));
   const all = results.flat();
   console.log(`  📡 Yahoo per-stock: ${all.length} articles`);
