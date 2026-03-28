@@ -48,6 +48,14 @@ const SCHEMA = `
     name TEXT NOT NULL, email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL, created_at TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS'))
   );
+  CREATE TABLE IF NOT EXISTS pending_users (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    otp TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS watchlists (
     user_id INTEGER NOT NULL,
     symbol  TEXT NOT NULL,
