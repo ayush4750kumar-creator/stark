@@ -20,7 +20,7 @@ async function runNewsPipeline() {
     await runAgentA();
     await runAgentB();
     console.log("\n🎯 Running AgentE (importance filter)...");
-    try { await runAgentE(30); } catch(e) { console.error("❌ AgentE crashed:", e.message, e.stack); }
+    // AgentE runs hourly (see cron below)
     console.log("\n✍  Running AgentF (Gemini summarizer)...");
     try { await runAgentF(60); } catch(e) { console.error("❌ AgentF crashed:", e.message, e.stack); }
     console.log("✅ News fetch + AI pipeline complete\n");
@@ -100,3 +100,10 @@ function startScheduler() {
 }
 
 module.exports = { startScheduler, runNewsPipeline, runPricePipeline };
+// AgentE + AgentF hourly — 5+10 articles max to stay within free tier (120+240/day)
+cron.schedule("15 * * * *", async () => {
+  console.log("\n🎯 AgentE (hourly)...");
+  try { await runAgentE(5); } catch(e) { console.error("❌ AgentE error:", e.message); }
+  console.log("\n✍  AgentF (hourly)...");
+  try { await runAgentF(10); } catch(e) { console.error("❌ AgentF error:", e.message); }
+});
