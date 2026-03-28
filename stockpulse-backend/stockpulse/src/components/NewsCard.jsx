@@ -1373,14 +1373,12 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
   const isTracked  = trackedSymbols.includes(news.symbol);
   const isMarket   = !news.symbol || news.symbol === "MARKET";
   const displayTime = liveRelativeTime(news.publishedAt || news.published_at);
-  const preview    = getPreview(news.fullText, news.summary, news.headline);
+  const preview    = getPreview(news.full_text, news.summary_20, news.headline);
 
   const changeSign = (news.change ?? 0) >= 0 ? "+" : "";
 
   // Use original article image if it exists, else pick from topic DB
-  const imgUrl = news.hasImage && news.image
-    ? news.image
-    : getTopicImage(news.headline, news.symbol, news.id);
+  const imgUrl = news.image_url || getTopicImage(news.headline, news.symbol, news.id);
 
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
@@ -1398,14 +1396,14 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         symbol:       news.symbol,
         company:      news.company,
         headline:     news.headline,
-        summary_20:   news.summary,
+        summary_20:   news.summary_20,
         summary_long: news.summary_long || null,
-        full_text:    news.fullText || news.summary || "",
+        full_text:    news.full_text || news.summary_20 || "",
         sentiment:    news.sentiment,
         source:       news.source,
-        source_url:   news.sourceUrl,
+        source_url:   news.source_url || news.sourceUrl,
         image_url:    news.image,
-        published_at: news.publishedAt,
+        published_at: news.published_at || news.publishedAt,
         price:        news.price,
         change_pct:   news.change,
       }));

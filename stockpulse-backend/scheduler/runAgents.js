@@ -8,6 +8,8 @@ const { runAgentA } = require("../agents/agentA");
 const { runAgentB } = require("../agents/agentB");
 const { runAgentE } = require("../agents/agentE_importance");
 const { runAgentF } = require("../agents/agentF_summarizer");
+const { runAgentC } = require("../agents/agentC_dedup");
+const { runAgentD } = require("../agents/agentD_rewriter");
 const { refreshAllPrices } = require("../services/stockPriceService");
 const { prefetchAll } = require("../services/financialsService");
 const { runBatch: runSentimentBatch } = require("../services/sentimentService");
@@ -19,6 +21,8 @@ async function runNewsPipeline() {
   try {
     await runAgentA();
     await runAgentB();
+    console.log("\n🔍 Running AgentC (dedup + tag)...");
+    try { await runAgentC(300); } catch(e) { console.error("❌ AgentC error:", e.message); }
     console.log("\n🎯 Running AgentE (importance filter)...");
     // AgentE runs hourly (see cron below)    console.log("✅ News fetch + AI pipeline complete\n");
     // Run sentiment analysis on fresh articles (non-blocking, after news saved)
@@ -103,4 +107,10 @@ cron.schedule("15 * * * *", async () => {
   try { await runAgentE(5); } catch(e) { console.error("❌ AgentE error:", e.message); }
   console.log("\n✍  AgentF (hourly)...");
   try { await runAgentF(10); } catch(e) { console.error("❌ AgentF error:", e.message); }
+});
+
+// AgentD — Gemini rewriter, hourly, 10 articles max (stays within free tier)
+cron.schedule("30 * * * *", async () => {
+  console.log("\n✍  AgentD (hourly Gemini rewriter)...");
+  try { await runAgentD(10); } catch(e) { console.error("❌ AgentD error:", e.message); }
 });
