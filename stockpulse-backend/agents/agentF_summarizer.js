@@ -73,7 +73,8 @@ async function runAgentF(limit = 30) {
   const articles = await db.prepare(`
     SELECT id, headline, source_url, source, full_text FROM articles
     WHERE processed = 0
-      AND (importance IN ('high', 'medium') OR importance IS NULL)
+      AND importance IS NOT NULL
+      AND importance != 'noise'
       AND headline IS NOT NULL
     ORDER BY id DESC LIMIT ?
   `).all(limit);

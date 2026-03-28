@@ -13,7 +13,9 @@ const NOISE_SOURCES = ["reddit.com", "twitter.com", "x.com", "t.co", "quora.com"
 
 function isNoisySource(url = "", source = "") {
   const combined = (url + source).toLowerCase();
-  return NOISE_SOURCES.some(n => combined.includes(n));
+  const match = NOISE_SOURCES.find(n => combined.includes(n));
+  if (match) console.log("  noise match [" + match + "]: " + source + " | " + url.slice(0,50));
+  return !!match;
 }
 
 async function rateArticle(headline, source) {
