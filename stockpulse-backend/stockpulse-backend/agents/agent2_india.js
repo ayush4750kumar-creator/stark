@@ -18,6 +18,17 @@ function isJunk(h) {
   return JUNK_PATTERNS.some(p => p.test(h));
 }
 
+
+function detectStock(text) {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  return INDIAN_STOCKS.find(s => {
+    const sym = s.symbol.replace(".NS","").replace(".BO","").toLowerCase();
+    const nameWords = s.name.toLowerCase().split(" ").filter(w => w.length > 4);
+    return t.includes(sym) || nameWords.some(w => t.includes(w));
+  }) || null;
+}
+
 function extractImage(item) {
   return item["media:content"]?.["$"]?.url
     || item["media:thumbnail"]?.["$"]?.url
@@ -40,8 +51,11 @@ async function fetchRSSFeeds() {
       const items  = (parsed.items || []).slice(0, 15);
       for (const item of items) {
         if (!isJunk(item.title)) {
+          const stock = detectStock((item.title||"") + " " + (item.contentSnippet||""));
           articles.push({
             uuid:         uuidv4(),
+            symbol:       stock?.symbol || null,
+            company:      stock?.name   || null,
             headline:     item.title || "",
             full_text:    item.contentSnippet || item.content || item.title || "",
             source:       feed.source,
@@ -111,10 +125,10 @@ async function saveArticles(articles) {
     try {
       const res = await db.query(`
         INSERT INTO articles
-          (uuid, headline, full_text, source, source_url, image_url, published_at, region, processed, agent_source)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,0,'agent2')
+          (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, region, processed, agent_source)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,0,'agent2')
         ON CONFLICT DO NOTHING
-      `, [a.uuid, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.region]);
+      `, [a.uuid, a.symbol||null, a.company||null, a.headline, a.full_text, a.source, a.source_url, a.image_url, a.published_at, a.region]);
       if (res.rowCount > 0) saved++;
     } catch (e) {
       console.error("Agent2 DB error:", e.message);
