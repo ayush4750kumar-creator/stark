@@ -4,7 +4,7 @@
 const axios  = require("axios");
 const { getDB } = require("../config/database");
 
-const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY;
+const PEXELS_KEY = process.env.PEXELS_API_KEY;
 
 async function isImageAccessible(url) {
   if (!url) return false;
@@ -16,17 +16,17 @@ async function isImageAccessible(url) {
   }
 }
 
-async function searchUnsplash(query) {
-  if (!UNSPLASH_KEY || UNSPLASH_KEY.length < 10) return null;
+async function searchPexels(query) {
+  if (!PEXELS_KEY || PEXELS_KEY.length < 10) return null;
   try {
-    const res = await axios.get("https://api.unsplash.com/search/photos", {
+    const res = await axios.get("https://api.pexels.com/v1/search", {
       params: { query, per_page: 1, orientation: "landscape" },
-      headers: { Authorization: `Client-ID ${UNSPLASH_KEY}` },
+      headers: { Authorization: PEXELS_KEY },
       timeout: 8000,
     });
-    return res.data?.results?.[0]?.urls?.regular || null;
+    return res.data?.photos?.[0]?.src?.large || null;
   } catch (e) {
-    console.error("  ⚠ Unsplash error:", e.message);
+    console.error("  ⚠ Pexels error:", e.message);
     return null;
   }
 }
@@ -58,7 +58,7 @@ async function runAgent5(limit = 50) {
   }
 
   console.log(`  🖼  Agent5: processing ${articles.length} articles...`);
-  let fromArticle = 0, fromUnsplash = 0, failed = 0;
+  let fromArticle = 0, fromPexels = 0, failed = 0;
 
   for (const article of articles) {
     try {
@@ -73,8 +73,8 @@ async function runAgent5(limit = 50) {
       // Step 2: fallback to Unsplash
       if (!finalImage) {
         const query = buildSearchQuery(article);
-        finalImage  = await searchUnsplash(query);
-        if (finalImage) fromUnsplash++;
+        finalImage  = await searchPexels(query);
+        if (finalImage) fromPexels++;
       }
 
       if (finalImage) {
@@ -93,8 +93,8 @@ async function runAgent5(limit = 50) {
     }
   }
 
-  console.log(`✅ Agent5 done — ${fromArticle} from article, ${fromUnsplash} from Unsplash, ${failed} no image in ${((Date.now()-t0)/1000).toFixed(1)}s`);
-  return fromArticle + fromUnsplash;
+  console.log(`✅ Agent5 done — ${fromArticle} from article, ${fromPexels} from Pexels, ${failed} no image in ${((Date.now()-t0)/1000).toFixed(1)}s`);
+  return fromArticle + fromPexels;
 }
 
 module.exports = { runAgent5 };
