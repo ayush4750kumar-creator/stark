@@ -2,31 +2,12 @@
 const express = require("express");
 const bcrypt  = require("bcryptjs");
 const jwt     = require("jsonwebtoken");
+const axios   = require("axios");
 const { getDB } = require("../config/database");
-const SibApiV3Sdk = require("@getbrevo/brevo");
 
 const router      = express.Router();
 const JWT_SECRET  = process.env.JWT_SECRET || "stockpulse_jwt_secret_changeme";
 const SALT_ROUNDS = 10;
-
-// ── Brevo email client ─────────────────────────────────────────
-const brevoClient = new SibApiV3Sdk.TransactionalEmailsApi();
-brevoClient.authentications["api-key"].apiKey = process.env.BREVO_API_KEY;
-
-async function sendOTP(email, name, otp) {
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-  sendSmtpEmail.to = [{ email, name }];
-  sendSmtpEmail.sender = { email: "noreply@gramble.in", name: "Gramble" };
-  sendSmtpEmail.subject = "Your Gramble verification code";
-  sendSmtpEmail.htmlContent = `
-    <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;border:1px solid #eee;border-radius:12px">
-      <h2 style="color:#111">Verify your email</h2>
-      <p>Hi ${name}, use the code below to verify your Gramble account:</p>
-      <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#2563eb;padding:16px 0">${otp}</div>
-      <p style="color:#666;font-size:13px">This code expires in 10 minutes. If you didn't sign up, ignore this email.</p>
-    </div>`;
-  await brevoClient.sendTransacEmail(sendSmtpEmail);
-}
 
 function initials(name) {
   return name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
@@ -34,6 +15,17 @@ function initials(name) {
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendOTP(email, name, otp) {
+  await axios.post("https://api.brevo.com/v3/smtp/email", {
+    sender: { email: "noreply@gramble.in", name: "Gramble" },
+    to: [{ email, name }],
+    subject: "Your Gramble verification code",
+    htmlContent: `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;border:1px solid #eee;border-radius:12px"><h2 style="color:#111">Verify your email</h2><p>Hi ${name}, your verification code is:</p><div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#2563eb;padding:16px 0">${otp}</div><p style="color:#666;font-size:13px">This code expires in 10 minutes.</p></div>`
+  }, {
+    headers: { "api-key": process.env.BREVO_API_KEY, "Content-Type": "application/json" }
+  });
 }
 
 // ── POST /api/auth/signup ──────────────────────────────────────
@@ -56,17 +48,16 @@ router.post("/signup", async (req, res) => {
     const otp = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Store pending user
     await db.prepare(`
       INSERT INTO pending_users (name, email, password, otp, expires_at)
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(email) DO UPDATE SET name=excluded.name, password=excluded.password, otp=excluded.otp, expires_at=excluded.expires_at
     `).run([name.trim(), email.toLowerCase(), hashed, otp, expiresAt]);
 
-    await sendOTP(email, name, otp);
+    await sendOTP(email.toLowerCase(), name.trim(), otp);
     res.json({ success: true, message: "Verification code sent to your email." });
   } catch (err) {
-    console.error("Signup error:", err);
+    console.error("Signup error:", err.response?.data || err.message);
     res.status(500).json({ success: false, error: "Server error. Please try again." });
   }
 });
