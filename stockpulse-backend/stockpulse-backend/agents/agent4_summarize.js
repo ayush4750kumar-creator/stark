@@ -1,11 +1,9 @@
 // agents/agent4_summarize.js
-// Summarizes articles using Groq — 40 word summary + sentiment line
-
 const axios  = require("axios");
 const { getDB } = require("../config/database");
 
 const GROQ_KEY   = process.env.GROQ_API_KEY;
-const GROQ_MODEL = "llama3-8b-8192";
+const GROQ_MODEL = "llama-3.1-8b-instant"; // ✅ Updated — llama3-8b-8192 is deprecated
 
 async function summarizeWithGroq(headline, full_text) {
   const content = `Headline: ${headline}\n\nArticle: ${(full_text || "").slice(0, 800)}`;
@@ -39,7 +37,7 @@ No extra text, no bullet points, just two lines.`,
   const text = res.data?.choices?.[0]?.message?.content?.trim() || "";
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  const summary  = lines[0] || "";
+  const summary   = lines[0] || "";
   const sentiment = lines.find(l => l.toLowerCase().startsWith("sentiment:")) || lines[1] || "";
 
   return { summary, sentiment };
@@ -73,6 +71,13 @@ async function runAgent4(limit = 30) {
 
   for (const article of articles) {
     try {
+      // ✅ Guard: skip if headline is blank/whitespace
+      if (!article.headline?.trim()) {
+        console.warn(`  ⚠ Agent4: skipping id ${article.id} — empty headline`);
+        failed++;
+        continue;
+      }
+
       const { summary, sentiment } = await summarizeWithGroq(article.headline, article.full_text);
 
       await db.query(`
@@ -82,10 +87,15 @@ async function runAgent4(limit = 30) {
       `, [summary, sentiment, article.id]);
 
       done++;
-      // Rate limit — Groq free tier is generous but let's be safe
       await new Promise(r => setTimeout(r, 200));
+
     } catch (e) {
-      console.error(`  ⚠ Agent4 error on id ${article.id}:`, e.message);
+      // ✅ Log full Groq error body so you can actually debug it
+      const groqError = e.response?.data?.error;
+      console.error(
+        `  ⚠ Agent4 error on id ${article.id}: ${e.message}`,
+        groqError ? `| Groq: [${groqError.type}] ${groqError.message}` : ""
+      );
       failed++;
     }
   }
