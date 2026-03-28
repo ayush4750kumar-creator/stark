@@ -34,6 +34,8 @@ const rss = new RSSParser({
 
 async function saveArticle(a) {
   try {
+    const existing = await db().prepare(`SELECT id FROM articles WHERE symbol = ? AND LOWER(headline) = LOWER(?) LIMIT 1`).get([a.symbol, a.headline]);
+    if (existing) return false;
     await db().prepare(`
       INSERT INTO articles
         (uuid,symbol,company,headline,full_text,source,source_url,image_url,published_at,agent_source)
