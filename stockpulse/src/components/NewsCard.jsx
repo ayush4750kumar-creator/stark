@@ -1,5 +1,5 @@
 // src/components/NewsCard.jsx
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function liveRelativeTime(iso) {
@@ -17,8 +17,13 @@ function liveRelativeTime(iso) {
   return new Date(iso).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" });
 }
 
-function cleanHeadline(h) {
-  return (h || "").replace(/\s[-–|]\s*[A-Z][a-zA-Z\s.&]{2,}$/, "").trim() || h;
+// Detect sentiment direction from Groq's full sentence
+function sentimentDirection(text) {
+  if (!text) return "neutral";
+  const t = text.toLowerCase();
+  if (t.includes("positiv") || t.includes("bullish") || t.includes("upside") || t.includes("benefit") || t.includes("boost") || t.includes("gain")) return "bullish";
+  if (t.includes("negativ") || t.includes("bearish") || t.includes("downside") || t.includes("concern") || t.includes("risk") || t.includes("decline") || t.includes("loss")) return "bearish";
+  return "neutral";
 }
 
 const IMG_DB = {
@@ -238,82 +243,8 @@ const SUBTOPIC_RULES = [
 const _seenImgs = new Set();
 export function resetSeenImgs() { _seenImgs.clear(); }
 
-function imgHash(headline, articleId) {
-  const id = parseInt(articleId) || 0;
-  const scrambled = Math.imul(id, 2654435761) >>> 0;
-  const mixed = (scrambled ^ (scrambled >>> 16) ^ Math.imul(id, 40503)) >>> 0;
-  const str = `${mixed}::${(headline || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 80)}`;
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return (h ^ (h >>> 16)) >>> 0;
-}
-
-function getTopicImage(headline, symbol, articleId) {
-  const hl = (headline || "").toLowerCase();
-  let topic = null;
-  for (const rule of SUBTOPIC_RULES) {
-    if (rule.keys.some(k => hl.includes(k))) { topic = rule.pool; break; }
-  }
-  const SYMBOL_MAP = {
-    RELIANCE:"energy", TCS:"tech", INFY:"tech", HDFCBANK:"banking", ICICIBANK:"banking",
-    WIPRO:"tech", BAJFINANCE:"banking", SBIN:"banking", TATAMOTORS:"conglomerate", MARUTI:"market",
-    ONGC:"energy", ADANIENT:"conglomerate", SUNPHARMA:"pharma", ITC:"fmcg",
-    KOTAKBANK:"banking", HINDUNILVR:"fmcg", NESTLEIND:"fmcg", ASIANPAINT:"fmcg",
-    LTIM:"tech", HCLTECH:"tech", TECHM:"tech",
-    AAPL:"tech", MSFT:"tech", GOOGL:"tech", NVDA:"tech", TSLA:"market",
-    META:"tech", AMZN:"retail", JPM:"banking", NDAQ:"market", ADI:"tech",
-    IBM:"tech", QCOM:"tech", AVGO:"tech", INTC:"tech", AMD:"tech",
-  };
-  if (!topic) topic = SYMBOL_MAP[symbol] || null;
-  if (!topic) topic = "market";
-  const pool = IMG_DB[topic] || IMG_DB.market;
-  const hash = imgHash(headline, articleId);
-  const base = hash % pool.length;
-  for (let offset = 0; offset < pool.length; offset++) {
-    const idx = (base + offset) % pool.length;
-    const url = pool[idx];
-    if (!_seenImgs.has(url)) { _seenImgs.add(url); return url; }
-  }
-  const fallback = pool[base];
-  _seenImgs.add(fallback);
-  return fallback;
-}
-
-
-const TOPIC_KEYWORDS = {
-  banking:        "bank finance money",
-  tech:           "technology computer digital",
-  energy:         "oil energy solar power",
-  auto:           "automobile car vehicle",
-  pharma:         "medicine healthcare hospital",
-  retail:         "shopping retail store",
-  fmcg:           "consumer goods products",
-  realestate:     "real estate property building",
-  infrastructure: "infrastructure construction bridge",
-  india:          "india economy rupee",
-  market:         "stock market trading finance",
-  conglomerate:   "business corporate industry",
-};
-
-function getUnsplashUrl(headline, symbol) {
-  const hl = (headline || "").toLowerCase();
-  for (const [topic, keywords] of Object.entries(TOPIC_KEYWORDS)) {
-    for (const rule of SUBTOPIC_RULES) {
-      if (rule.pool === topic && rule.keys.some(k => hl.includes(k))) {
-        return `https://source.unsplash.com/700x400/?${encodeURIComponent(keywords)}&sig=${Math.abs(headline.split("").reduce((a,c)=>a+c.charCodeAt(0),0))}`;
-      }
-    }
-  }
-  return `https://source.unsplash.com/700x400/?stock,market,finance&sig=${Math.abs((headline||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0))}`;
-}
-
-
 function getTopicImageUrl(headline, symbol) {
   const hl = (headline || "").toLowerCase();
-  
   const TOPIC_QUERIES = {
     banking:        "bank,finance,money",
     tech:           "technology,computer,digital",
@@ -328,12 +259,10 @@ function getTopicImageUrl(headline, symbol) {
     market:         "stockmarket,trading,finance",
     conglomerate:   "business,corporate,industry",
   };
-
   let topic = "market";
   for (const rule of SUBTOPIC_RULES) {
     if (rule.keys.some(k => hl.includes(k))) { topic = rule.pool; break; }
   }
-
   const SYMBOL_MAP = {
     RELIANCE:"energy", TCS:"tech", INFY:"tech", HDFCBANK:"banking", ICICIBANK:"banking",
     WIPRO:"tech", BAJFINANCE:"banking", SBIN:"banking", TATAMOTORS:"auto", MARUTI:"auto",
@@ -341,31 +270,34 @@ function getTopicImageUrl(headline, symbol) {
     AAPL:"tech", MSFT:"tech", GOOGL:"tech", NVDA:"tech", TSLA:"auto",
     META:"tech", AMZN:"retail", JPM:"banking",
   };
-
-  const sym = (symbol||"").replace(/\.NS$|\.BO$/,"").toUpperCase();
+  const sym = (symbol || "").replace(/\.NS$|\.BO$/, "").toUpperCase();
   if (!topic || topic === "market") topic = SYMBOL_MAP[sym] || "market";
-
   const query = TOPIC_QUERIES[topic] || "stockmarket,finance";
-  const sig = Math.abs((headline||"").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 1000;
+  const sig = Math.abs((headline || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % 1000;
   return `https://loremflickr.com/700/400/${query}?lock=${sig}`;
 }
 
 export default function NewsCard({ news, index, onTrack, trackedSymbols = [], onAboutCompany }) {
   const navigate    = useNavigate();
   const [expanded, setExpanded] = useState(false);
-  const isTracked   = trackedSymbols.includes(news.symbol);
+
   const isMarket    = !news.symbol || news.symbol === "MARKET";
   const displayTime = liveRelativeTime(news.publishedAt || news.published_at);
   const changeSign  = (news.change ?? 0) >= 0 ? "+" : "";
   const imgUrl      = news.hasImage && news.image
     ? news.image
     : getTopicImageUrl(news.headline, news.symbol);
+
   const label    = isMarket ? "MARKET" : (news.symbol || "").toUpperCase();
   const subLabel = isMarket ? "Global News" : (news.company || news.symbol || "");
 
+  // Always show summary as-is — no echo filtering
   const shortSummary = news.summary_20 || news.summary || null;
   const longSummary  = news.summary_long || null;
   const sentiment    = news.sentiment || null;
+  const sentDir      = sentimentDirection(sentiment);
+  // Show "more" pill if there's sentiment or long summary to expand into
+  const hasMore      = !!(sentiment || longSummary);
 
   function openSource() {
     const url = news.sourceUrl || news.source_url;
@@ -411,40 +343,30 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
       }}
       onClick={openSource}
     >
-      {/* ── Sentiment pill — top-left corner ── */}
-      {sentiment && sentiment !== "neutral" && (
+      {/* Sentiment pill — top-left */}
+      {sentDir !== "neutral" && (
         <div style={{
           position: "absolute", top: 12, left: 12, zIndex: 10,
-          background: sentiment === "bullish" ? "rgba(74,222,128,0.88)" : "rgba(255,107,107,0.88)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          borderRadius: 20,
-          padding: "3px 10px",
-          fontSize: 10,
-          fontWeight: 800,
-          fontFamily: "var(--font-display)",
-          color: "#fff",
+          background: sentDir === "bullish" ? "rgba(74,222,128,0.88)" : "rgba(255,107,107,0.88)",
+          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+          borderRadius: 20, padding: "3px 10px",
+          fontSize: 10, fontWeight: 800,
+          fontFamily: "var(--font-display)", color: "#fff",
           letterSpacing: "0.06em",
-          boxShadow: sentiment === "bullish"
+          boxShadow: sentDir === "bullish"
             ? "0 2px 8px rgba(74,222,128,0.45)"
             : "0 2px 8px rgba(255,107,107,0.45)",
         }}>
-          {sentiment === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
+          {sentDir === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
         </div>
       )}
 
       {/* Background image */}
       <div style={{ position: "absolute", inset: 0 }}>
         <img
-          src={imgUrl}
-          alt=""
+          src={imgUrl} alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          onError={e => {
-            e.target.onerror = null;
-            const attempts = parseInt(e.target.dataset.attempt || "0") + 1;
-            e.target.dataset.attempt = attempts;
-            e.target.src = getTopicImageUrl(news.headline, news.symbol);
-          }}
+          onError={e => { e.target.onerror = null; e.target.src = getTopicImageUrl(news.headline, news.symbol); }}
         />
         <div style={{
           position: "absolute", inset: 0,
@@ -479,13 +401,14 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
       {/* Bottom overlay */}
       <div style={{
         position: "relative",
-        background: "rgba(5, 3, 1, 0.35)",
+        background: "rgba(5,3,1,0.35)",
         backdropFilter: "blur(18px) saturate(1.4)",
         WebkitBackdropFilter: "blur(18px) saturate(1.4)",
         borderTop: "1px solid rgba(255,255,255,0.08)",
         padding: "14px 16px 0",
       }}>
-        {/* Meta row: time · source */}
+
+        {/* Meta: time · source */}
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7, flexWrap: "wrap" }}>
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{displayTime}</span>
           {news.source && (
@@ -496,49 +419,119 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
           )}
         </div>
 
-        {/* Headline */}
-        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "rgba(255,255,255,0.95)", margin: "0 0 7px", letterSpacing: "-0.01em" }}>
-          {cleanHeadline(news.headline)}
+        {/* Headline — exactly as-is from the article */}
+        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "rgba(255,255,255,0.95)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+          {news.headline}
         </p>
 
-        {/* Short summary */}
+        {/* Summary — always visible if it exists */}
         {shortSummary && (
-          <div style={{ marginBottom: 7 }}>
-            <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.65)", margin: "0 0 4px", fontFamily: "var(--font-body)" }}>
-              {shortSummary}
-            </p>
-
-            {/* Expandable long summary */}
-            {longSummary && (
-              <>
-                <div style={{ overflow: "hidden", maxHeight: expanded ? "500px" : "0px", transition: "max-height 0.3s ease" }}>
-                  <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.50)", margin: "6px 0 4px", fontFamily: "var(--font-body)" }}>
-                    {longSummary}
-                  </p>
-                </div>
-                <button
-                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                  style={{
-                    background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: 12, padding: "3px 10px", fontSize: 11,
-                    color: "rgba(255,255,255,0.55)", cursor: "pointer",
-                    fontFamily: "var(--font-display)", fontWeight: 600,
-                    marginBottom: 4, transition: "background 0.2s",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.14)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
-                >
-                  {expanded ? "▲ Less" : "▼ More"}
-                </button>
-              </>
-            )}
-          </div>
+          <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.62)", margin: "0 0 8px", fontFamily: "var(--font-body)" }}>
+            {shortSummary}
+          </p>
         )}
 
-        {/* Tap to read */}
-        <p style={{ fontSize: 11, color: "rgba(255,210,100,0.65)", fontFamily: "var(--font-display)", fontWeight: 600, margin: "0 0 12px", letterSpacing: "0.03em" }}>
-          Tap to read on {news.source || "source"} ↗
-        </p>
+        {/* "more" / "less" pill — only shown if there's extra content to expand */}
+        {hasMore && (
+          <button
+            onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              background: "none", border: "none", padding: "0 0 8px",
+              fontSize: 11, fontWeight: 700,
+              fontFamily: "var(--font-display)",
+              color: "rgba(255,255,255,0.32)",
+              cursor: "pointer",
+              letterSpacing: "0.04em",
+              transition: "color 0.2s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.65)"}
+            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.32)"}
+          >
+            {expanded ? "▲ less" : "▼ more"}
+          </button>
+        )}
+
+        {/* Expanded section — slides open */}
+        <div style={{
+          overflow: "hidden",
+          maxHeight: expanded ? "400px" : "0px",
+          transition: "max-height 0.35s ease",
+        }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 10 }}>
+
+            {/* Long summary if any */}
+            {longSummary && (
+              <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.50)", margin: 0, fontFamily: "var(--font-body)" }}>
+                {longSummary}
+              </p>
+            )}
+
+            {/* Sentiment row */}
+            {sentiment && (
+              <div style={{
+                display: "flex", alignItems: "flex-start", gap: 8,
+                background: sentDir === "bullish" ? "rgba(74,222,128,0.08)" : sentDir === "bearish" ? "rgba(255,107,107,0.08)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${sentDir === "bullish" ? "rgba(74,222,128,0.22)" : sentDir === "bearish" ? "rgba(255,107,107,0.22)" : "rgba(255,255,255,0.10)"}`,
+                borderRadius: 8, padding: "7px 10px",
+              }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>
+                  {sentDir === "bullish" ? "📈" : sentDir === "bearish" ? "📉" : "➡️"}
+                </span>
+                <span style={{
+                  fontSize: 11, lineHeight: 1.6, fontFamily: "var(--font-body)",
+                  color: sentDir === "bullish" ? "rgba(74,222,128,0.9)" : sentDir === "bearish" ? "rgba(255,107,107,0.9)" : "rgba(255,255,255,0.50)",
+                }}>
+                  {sentiment.replace(/^sentiment:\s*/i, "")}
+                </span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={e => { e.stopPropagation(); openSource(); }}
+                style={{
+                  flex: 1, padding: "7px 0", borderRadius: 8,
+                  fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
+                  cursor: "pointer",
+                  background: "rgba(255,210,100,0.10)",
+                  border: "1px solid rgba(255,210,100,0.22)",
+                  color: "rgba(255,210,100,0.85)",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,210,100,0.20)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,210,100,0.10)"}
+              >
+                Read Article ↗
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); openDetailPage("performance"); }}
+                style={{
+                  flex: 1, padding: "7px 0", borderRadius: 8,
+                  fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
+                  cursor: "pointer",
+                  background: "rgba(255,255,255,0.07)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "rgba(255,255,255,0.55)",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.13)"}
+                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+              >
+                Stock Analysis →
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Tap to read — hidden when expanded (buttons take over) */}
+        {!expanded && (
+          <p style={{ fontSize: 11, color: "rgba(255,210,100,0.65)", fontFamily: "var(--font-display)", fontWeight: 600, margin: "0 0 12px", letterSpacing: "0.03em" }}>
+            Tap to read on {news.source || "source"} ↗
+          </p>
+        )}
 
         <div style={{ height: 8 }} />
       </div>
