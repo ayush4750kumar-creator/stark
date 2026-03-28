@@ -11,8 +11,6 @@ const { runAgentF } = require("../agents/agentF_summarizer");
 const { refreshAllPrices } = require("../services/stockPriceService");
 const { prefetchAll } = require("../services/financialsService");
 const { runBatch: runSentimentBatch } = require("../services/sentimentService");
-const { runAgentE } = require("../agents/agentE_importance");
-const { runAgentF } = require("../agents/agentF_summarizer");
 
 async function runNewsPipeline() {
   console.log("\n" + "═".repeat(50));
@@ -21,10 +19,11 @@ async function runNewsPipeline() {
   try {
     await runAgentA();
     await runAgentB();
-    console.log("✅ News fetch complete\n");
-    setTimeout(() => {
-      runAgentE(60).then(() => runAgentF(30)).catch(e => console.error("❌ AI pipeline error:", e.message));
-    }, 5000);
+    console.log("\n🎯 Running AgentE (importance filter)...");
+    await runAgentE(100);
+    console.log("\n✍  Running AgentF (Gemini summarizer)...");
+    await runAgentF(50);
+    console.log("✅ News fetch + AI pipeline complete\n");
     // Run sentiment analysis on fresh articles (non-blocking, after news saved)
     setTimeout(() => {
       runSentimentBatch(80).catch(e => console.error("❌ Sentiment error:", e.message));
