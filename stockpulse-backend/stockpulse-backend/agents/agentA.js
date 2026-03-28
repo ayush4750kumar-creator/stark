@@ -46,7 +46,7 @@ async function saveArticle(article) {
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'agentA')
-      ON CONFLICT (uuid) DO NOTHING
+      ON CONFLICT DO NOTHING
     `).run(
       article.uuid,
       article.symbol,
