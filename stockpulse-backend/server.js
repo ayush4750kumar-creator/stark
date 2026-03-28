@@ -108,4 +108,4 @@ dbReady.then(() => {
 }).catch(err => {
   console.error("Failed to init database:", err);
   process.exit(1);
-});
+}); 
