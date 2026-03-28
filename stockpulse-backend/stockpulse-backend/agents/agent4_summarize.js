@@ -3,7 +3,7 @@ const axios  = require("axios");
 const { getDB } = require("../config/database");
 
 const GROQ_KEY   = process.env.GROQ_API_KEY;
-const GROQ_MODEL = "llama-3.1-8b-instant"; // ✅ Updated — llama3-8b-8192 is deprecated
+const GROQ_MODEL = "llama-3.1-8b-instant";
 
 async function summarizeWithGroq(headline, full_text) {
   const content = `Headline: ${headline}\n\nArticle: ${(full_text || "").slice(0, 800)}`;
@@ -17,10 +17,13 @@ async function summarizeWithGroq(headline, full_text) {
       messages: [
         {
           role: "system",
-          content: `You are a concise financial news summarizer. Given a news headline and article, respond with exactly two lines:
-Line 1: A neutral 40-word summary of the article.
-Line 2: A single sentence about market sentiment starting with "Sentiment:" — state whether this could impact the stock/market positively, negatively, or neutrally and briefly why.
-No extra text, no bullet points, just two lines.`,
+          content: `You are a concise financial news summarizer.
+Given a headline and article body, respond with EXACTLY two lines:
+
+Line 1: A 35–45 word summary that gives NEW information NOT already stated in the headline — explain the context, cause, numbers, or implications. Do NOT start with the company name. Do NOT restate or rephrase the headline. Do NOT begin with words that appear in the headline.
+Line 2: Start with "Sentiment:" — one sentence stating whether this is positive, negative, or neutral for the stock/market and briefly why.
+
+No labels, no bullet points, no intro text. Just two plain lines.`,
         },
         { role: "user", content },
       ],
@@ -71,7 +74,6 @@ async function runAgent4(limit = 30) {
 
   for (const article of articles) {
     try {
-      // ✅ Guard: skip if headline is blank/whitespace
       if (!article.headline?.trim()) {
         console.warn(`  ⚠ Agent4: skipping id ${article.id} — empty headline`);
         failed++;
@@ -90,7 +92,6 @@ async function runAgent4(limit = 30) {
       await new Promise(r => setTimeout(r, 1500));
 
     } catch (e) {
-      // ✅ Log full Groq error body so you can actually debug it
       const groqError = e.response?.data?.error;
       console.error(
         `  ⚠ Agent4 error on id ${article.id}: ${e.message}`,
