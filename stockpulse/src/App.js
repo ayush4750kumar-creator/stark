@@ -26,7 +26,7 @@ const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
 const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
 // ──────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
+const DEFAULT_SYMBOLS = [];
 
 // ── Outfit + Inter font injection ─────────────────────────────────────────
 function FontInjector() {
