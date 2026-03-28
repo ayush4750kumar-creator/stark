@@ -20,10 +20,7 @@ async function runNewsPipeline() {
     await runAgentA();
     await runAgentB();
     console.log("\n🎯 Running AgentE (importance filter)...");
-    // AgentE runs hourly (see cron below)
-    console.log("\n✍  Running AgentF (Gemini summarizer)...");
-    try { await runAgentF(60); } catch(e) { console.error("❌ AgentF crashed:", e.message, e.stack); }
-    console.log("✅ News fetch + AI pipeline complete\n");
+    // AgentE runs hourly (see cron below)    console.log("✅ News fetch + AI pipeline complete\n");
     // Run sentiment analysis on fresh articles (non-blocking, after news saved)
     setTimeout(() => {
       runSentimentBatch(80).catch(e => console.error("❌ Sentiment error:", e.message));
