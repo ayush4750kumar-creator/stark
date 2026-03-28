@@ -11,7 +11,7 @@ const cheerio = require("cheerio");
 const { getDB } = require("../config/database");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
@@ -93,7 +93,12 @@ async function runAgentF(limit = 30) {
         fullText = await scrapeArticle(article.source_url);
       }
 
-      const result = await summarizeArticle(article.headline, fullText, article.source);
+      let result = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        result = await summarizeArticle(article.headline, fullText, article.source);
+        if (result) break;
+        await new Promise(r => setTimeout(r, 60000)); // wait 60s on failure
+      }
       if (!result) continue;
 
       await db.prepare(`
