@@ -1,7 +1,4 @@
-// agents/agentE_importance.js
-// Uses Groq instead of Gemini
-
-const axios  = require("axios");
+const axios = require("axios");
 const { getDB } = require("../config/database");
 
 const GROQ_KEY = process.env.GROQ_API_KEY;
@@ -52,14 +49,15 @@ importance must be one of: "high", "medium", "low", "noise"
 async function runAgentE(limit = 50) {
   const db = getDB();
 
-  // Ensure column exists
-  try { db.prepare("ALTER TABLE articles ADD COLUMN importance TEXT").run(); } catch {}
+  try {
+    await db.query("ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance TEXT");
+  } catch {}
 
-  const articles = db.prepare(`
+  const { rows: articles } = await db.query(`
     SELECT id, headline, source, source_url FROM articles
     WHERE importance IS NULL AND headline IS NOT NULL
-    ORDER BY id DESC LIMIT ?
-  `).all(limit);
+    ORDER BY id DESC LIMIT $1
+  `, [limit]);
 
   if (!articles.length) return console.log("  ✓ AgentE: no articles to rate");
 
@@ -71,12 +69,12 @@ async function runAgentE(limit = 50) {
     await Promise.all(batch.map(async (article) => {
       try {
         if (isNoisySource(article.source_url, article.source)) {
-          db.prepare("UPDATE articles SET importance = 'noise' WHERE id = ?").run(article.id);
+          await db.query("UPDATE articles SET importance = 'noise' WHERE id = $1", [article.id]);
           filtered++;
           return;
         }
         const importance = await rateImportance(article.headline, article.source || "");
-        db.prepare("UPDATE articles SET importance = ? WHERE id = ?").run(importance, article.id);
+        await db.query("UPDATE articles SET importance = $1 WHERE id = $2", [importance, article.id]);
         rated++;
       } catch (err) {
         console.error(`  ⚠ AgentE error #${article.id}:`, err.message?.slice(0, 50));

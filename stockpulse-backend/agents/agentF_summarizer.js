@@ -1,6 +1,3 @@
-// agents/agentF_summarizer.js
-// Uses Groq (free, fast) instead of Gemini
-
 const axios   = require("axios");
 const cheerio = require("cheerio");
 const { getDB } = require("../config/database");
@@ -8,7 +5,6 @@ const { getDB } = require("../config/database");
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
 
-// ── Scrape article text + og:image ────────────────────────────
 async function scrapeArticle(url) {
   if (!url) return { text: null, image: null };
   try {
@@ -35,7 +31,6 @@ async function scrapeArticle(url) {
   }
 }
 
-// ── Keyword sentiment fallback ────────────────────────────────
 function keywordSentiment(headline) {
   const lower = (headline || "").toLowerCase();
   const bearish = ["falls","drops","plunges","declines","cuts","misses","downgrade","loss","warning","crash","sink","risk","down","slump","tumble","layoff","fraud","bankruptcy","lawsuit"];
@@ -45,7 +40,6 @@ function keywordSentiment(headline) {
   return "neutral";
 }
 
-// ── Groq call ─────────────────────────────────────────────────
 async function callGroq(prompt, retrying = false) {
   if (!GROQ_KEY) return null;
   try {
@@ -73,7 +67,6 @@ async function callGroq(prompt, retrying = false) {
   }
 }
 
-// ── Summarize one article ─────────────────────────────────────
 async function summarizeArticle(article) {
   const headline = (article.headline || "").trim();
   const symbol   = article.symbol || "MARKET";
@@ -109,75 +102,56 @@ Return only valid JSON. No markdown.`;
   };
 }
 
-// ── Reset all existing articles so they get re-summarized ─────
-async function resetArticles() {
-  const db = getDB();
-  await db.exec(`
-    UPDATE articles
-    SET processed = 0,
-        summary_20 = NULL,
-        summary_long = NULL
-    WHERE processed != 0
-  `);
-  console.log("  🔄 AgentF: reset all old articles for re-summarization");
-}
-
-// ── Main ──────────────────────────────────────────────────────
-async function runAgentF(limit = 20, reset = false) {
+async function runAgentF(limit = 20) {
   const db = getDB();
 
-  // Pass reset=true on first run to wipe old summaries
-  if (reset) await resetArticles();
-
-  const articles = await db.prepare(`
+  const { rows: articles } = await db.query(`
     SELECT id, headline, source_url, source, full_text, symbol, image_url
     FROM articles
-    WHERE processed = 0
+    WHERE processed = 1
       AND headline IS NOT NULL
     ORDER BY id DESC LIMIT $1
-  `).all(limit);
+  `, [limit]);
 
   if (!articles.length) return console.log("  ✓ AgentF: no articles to summarize");
 
   console.log(`  ✍  AgentF: summarizing ${articles.length} articles...`);
   let done = 0;
 
-  // Process in batches of 3 to respect Groq rate limits
   for (let i = 0; i < articles.length; i += 3) {
     const batch = articles.slice(i, i + 3);
     await Promise.all(batch.map(async (article) => {
       try {
         const result = await summarizeArticle(article);
-        await db.prepare(`
+        await db.query(`
           UPDATE articles SET
             headline     = $1,
             summary_20   = $2,
             summary_long = $3,
             sentiment    = $4,
-            full_text    = COALESCE(NULLIF(full_text,''), $5),
-            image_url    = COALESCE(NULLIF(image_url,''), $6),
+            full_text    = COALESCE(NULLIF(full_text, ''), $5),
+            image_url    = COALESCE(NULLIF(image_url, ''), $6),
             processed    = 2
           WHERE id = $7
-        `).run(
+        `, [
           result.headline,
           result.summary_20,
           result.summary_long,
           result.sentiment,
           result.full_text,
           result.image_url,
-          article.id
-        );
+          article.id,
+        ]);
         done++;
       } catch (err) {
         console.error(`  ⚠ AgentF error #${article.id}:`, err.message?.slice(0, 60));
-        await db.prepare("UPDATE articles SET processed = 2 WHERE id = $1").run(article.id);
+        await db.query("UPDATE articles SET processed = 2 WHERE id = $1", [article.id]);
       }
     }));
-    // 800ms between batches
     if (i + 3 < articles.length) await new Promise(r => setTimeout(r, 800));
   }
 
   console.log(`  ✅ AgentF: summarized ${done} articles`);
 }
 
-module.exports = { runAgentF, resetArticles };
+module.exports = { runAgentF };
