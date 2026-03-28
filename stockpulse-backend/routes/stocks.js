@@ -51,7 +51,7 @@ router.get("/", async (req, res) => {
 });
 
 // ── GET /api/stocks/trending ─────────────────────────────────────
-router.get("/trending", (req, res) => {
+router.get("/trending", async (req, res) => {
   try {
     let trending = await db().prepare(`
       SELECT s.*, COUNT(a.id) as news_count
@@ -243,7 +243,7 @@ router.get("/:symbol/chart", async (req, res) => {
 });
 
 // ── GET /api/stocks/:symbol/news ─────────────────────────────────
-router.get("/:symbol/news", (req, res) => {
+router.get("/:symbol/news", async (req, res) => {
   try {
     const symbol = req.params.symbol.toUpperCase();
     const limit  = parseInt(req.query.limit) || 20;
@@ -386,7 +386,7 @@ router.get("/:symbol/financials", async (req, res) => {
 });
 
 // ── GET /api/stocks/av-quota ─────────────────────────────────────
-router.get("/av-quota", (req, res) => {
+router.get("/av-quota", async (req, res) => {
   res.json({ success: true, data: avQuotaStatus() });
 });
 
