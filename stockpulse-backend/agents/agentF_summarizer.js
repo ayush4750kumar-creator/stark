@@ -60,9 +60,11 @@ Reply with ONLY a JSON object (no markdown, no explanation):
   try {
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
+    console.log("  🔍 Gemini raw:", text.slice(0, 150));
     const json = JSON.parse(text.replace(/```json|```/g, "").trim());
     return json;
-  } catch {
+  } catch(e) {
+    console.error("  ❌ AgentF parse error:", e.message);
     return null;
   }
 }
