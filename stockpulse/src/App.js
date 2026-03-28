@@ -88,7 +88,9 @@ function GrambleLogo({ size = 28 }) {
 }
 
 // ── Collapsible search bar ────────────────────────────────────────────────
-function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar onAddTracked={onAddTracked} onSelectStock={onSelectStock} />; } function CollapsibleSearch_OLD({ onAddTracked, onSelectStock }) {
+function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar onAddTracked={onAddTracked} onSelectStock={onSelectStock} />; }
+
+function CollapsibleSearch_OLD({ onAddTracked, onSelectStock }) {
   const [expanded, setExpanded] = useState(false);
   const wrapRef = useRef(null);
 
