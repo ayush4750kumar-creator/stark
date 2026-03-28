@@ -89,24 +89,24 @@ const SCHEMA = `
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
   CREATE TABLE IF NOT EXISTS financials (
-    id           SERIAL PRIMARY KEY,
-    symbol       TEXT NOT NULL,
-    period_type  TEXT NOT NULL,
-    period       TEXT NOT NULL,
-    revenue      REAL,
-    net_income   REAL,
-    gross_profit REAL,
-    ebit         REAL,
-    eps          REAL,
-    total_assets REAL,
-    total_debt   REAL,
-    equity       REAL,
-    op_cashflow  REAL,
-    capex        REAL,
+    id            SERIAL PRIMARY KEY,
+    symbol        TEXT NOT NULL,
+    period_type   TEXT NOT NULL,
+    period        TEXT NOT NULL,
+    revenue       REAL,
+    net_income    REAL,
+    gross_profit  REAL,
+    ebit          REAL,
+    eps           REAL,
+    total_assets  REAL,
+    total_debt    REAL,
+    equity        REAL,
+    op_cashflow   REAL,
+    capex         REAL,
     free_cashflow REAL,
-    fetched_at   TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
-    currency     TEXT,
-    source       TEXT,
+    fetched_at    TEXT DEFAULT (to_char(now(), 'YYYY-MM-DD HH24:MI:SS')),
+    currency      TEXT,
+    source        TEXT,
     UNIQUE(symbol, period_type, period)
   );
   CREATE INDEX IF NOT EXISTS idx_art_sym  ON articles(symbol);
@@ -114,24 +114,88 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_ph_sym   ON price_history(symbol);
 `;
 
+function flattenParams(args) {
+  if (args.length === 1 && Array.isArray(args[0])) return args[0];
+  if (
+    args.length === 1 &&
+    typeof args[0] === "object" &&
+    args[0] !== null &&
+    !Array.isArray(args[0])
+  ) {
+    return Object.values(args[0]);
+  }
+  return args;
+}
+
+function makeDB(pool) {
+  return {
+    prepare(sql) {
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      return {
+        async run(...args) {
+          const params = flattenParams(args);
+          const finalSql =
+            pgSql.match(/^INSERT/i) && !pgSql.includes("RETURNING")
+              ? pgSql + " RETURNING id"
+              : pgSql;
+          try {
+            const res = await pool.query(finalSql, params);
+            return {
+              changes: res.rowCount,
+              lastInsertRowid: res.rows[0]?.id ?? null,
+            };
+          } catch (e) {
+            if (e.code === "23505") return { changes: 0, lastInsertRowid: null };
+            throw e;
+          }
+        },
+        async get(...args) {
+          const params = flattenParams(args);
+          const res = await pool.query(
+            pgSql.includes("LIMIT") ? pgSql : pgSql + " LIMIT 1",
+            params
+          );
+          return res.rows[0] || null;
+        },
+        async all(...args) {
+          const params = flattenParams(args);
+          const res = await pool.query(pgSql, params);
+          return res.rows || [];
+        },
+      };
+    },
+    async exec(sql) {
+      await pool.query(sql);
+    },
+    async query(sql, params) {
+      return pool.query(sql, params);
+    },
+  };
+}
+
 let _initialized = false;
 
 async function initDB() {
   if (_initialized) return;
   await pool.query(SCHEMA);
 
-  await pool.query(`
+  await pool
+    .query(`
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS uuid            TEXT;
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS summary_long    TEXT;
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS importance      TEXT;
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS company         TEXT;
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS sentiment_score REAL;
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS agent_source    TEXT;
-  `).catch(e => console.warn("⚠ Migration warning:", e.message));
+  `)
+    .catch((e) => console.warn("⚠ Migration warning:", e.message));
 
-  await pool.query(`
+  await pool
+    .query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_art_uuid ON articles(uuid) WHERE uuid IS NOT NULL;
-  `).catch(e => console.warn("⚠ Index warning:", e.message));
+  `)
+    .catch((e) => console.warn("⚠ Index warning:", e.message));
 
   console.log("✅ PostgreSQL database ready");
   _initialized = true;
@@ -140,7 +204,7 @@ async function initDB() {
 const dbReady = initDB();
 
 function getDB() {
-  return pool;
+  return makeDB(pool);
 }
 
 module.exports = { dbReady, getDB };
