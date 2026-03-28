@@ -5,7 +5,7 @@ const { getDB } = require("../config/database");
 const db = () => getDB();
 
 // ── GET /api/news — paginated feed ───────────────────────────
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const page      = parseInt(req.query.page)  || 1;
     const limit     = parseInt(req.query.limit) || 20;
@@ -14,13 +14,13 @@ router.get("/", (req, res) => {
     const offset    = (page - 1) * limit;
 
     // Show all articles from last 30 days (processed or not)
-    let where    = "WHERE a.published_at >= NOW() - INTERVAL '30 days' AND a.headline IS NOT NULL AND length(a.headline) > 10";
+    let where    = "WHERE a.published_at::timestamptz >= NOW() - INTERVAL '30 days' AND a.headline IS NOT NULL AND length(a.headline) > 10";
     const params = [];
 
     if (symbol)    { where += " AND a.symbol = ?";    params.push(symbol.toUpperCase()); }
     if (sentiment) { where += " AND a.sentiment = ?"; params.push(sentiment); }
 
-    const articles = db().prepare(`
+    const articles = await db().prepare(`
       SELECT
         a.id, a.uuid, a.symbol, a.company, a.headline,
         a.summary_20, a.source, a.source_url, a.image_url,
@@ -29,17 +29,18 @@ router.get("/", (req, res) => {
       FROM articles a
       LEFT JOIN stocks s ON a.symbol = s.symbol
       ${where}
-      GROUP BY a.headline
+      
       ORDER BY a.published_at DESC
       LIMIT ? OFFSET ?
     `).all([...params, limit, offset]);
 
-    const total = db().prepare(
+    const total = await db().prepare(
       `SELECT COUNT(*) as count FROM articles a ${where}`
     ).get(params)?.count || 0;
+    const totalNum = parseInt(total) || 0;
 
     res.json({ success: true, data: articles,
-      pagination: { page, limit, total, hasMore: offset + limit < total } });
+      pagination: { page, limit, total: totalNum, hasMore: offset + limit < totalNum } });
   } catch (err) {
     console.error("GET /news error:", err);
     res.status(500).json({ success: false, error: err.message });
@@ -49,7 +50,7 @@ router.get("/", (req, res) => {
 // ── GET /api/news/:id/fetch — MUST be before /:id ────────────
 router.get("/:id/fetch", async (req, res) => {
   try {
-    const row = db().prepare(
+    const row = await db().prepare(
       "SELECT source_url, headline, full_text FROM articles WHERE id = ?"
     ).get(req.params.id);
 
@@ -98,15 +99,15 @@ router.get("/:id/fetch", async (req, res) => {
     const content = paras.slice(0, 10).join("\n\n");
     res.json({ success: true, content: content || row.full_text || "" });
   } catch (err) {
-    const row = db().prepare("SELECT full_text, headline FROM articles WHERE id = ?").get(req.params.id);
+    const row = await db().prepare("SELECT full_text, headline FROM articles WHERE id = ?").get(req.params.id);
     res.json({ success: true, content: row?.full_text || row?.headline || "" });
   }
 });
 
 // ── GET /api/news/:id — single article ───────────────────────
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const article = db().prepare(`
+    const article = await db().prepare(`
       SELECT
         a.*,
         s.price, s.change_amt, s.change_pct,
@@ -126,7 +127,7 @@ router.get("/:id", (req, res) => {
     // Related: same symbol first, then recent
     let related = [];
     if (article.symbol) {
-      related = db().prepare(`
+      related = await db().prepare(`
         SELECT id, headline, summary_20, sentiment, published_at, source, image_url
         FROM articles
         WHERE symbol = ? AND id != ? AND processed = 2
@@ -137,7 +138,7 @@ router.get("/:id", (req, res) => {
       const exclude = [article.id, ...related.map(r => r.id)];
       const ph = exclude.map(() => "?").join(",");
       const fillCount = 8 - related.length;
-      const more = db().prepare(`
+      const more = await db().prepare(`
         SELECT id, headline, summary_20, sentiment, published_at, source, image_url
         FROM articles WHERE id NOT IN (${ph}) AND processed = 2
         ORDER BY published_at DESC LIMIT ?

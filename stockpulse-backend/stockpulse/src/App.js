@@ -26,7 +26,7 @@ const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
 const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
 // ──────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
+const DEFAULT_SYMBOLS = [];
 
 // ── Outfit + Inter font injection ─────────────────────────────────────────
 function FontInjector() {
@@ -137,35 +137,65 @@ function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar 
 }
 
 // ── Inline auth modal ─────────────────────────────────────────────────────
+// ── Inline auth modal ─────────────────────────────────────────────────────
 function AuthModal({ onLogin, onClose }) {
-  const [mode, setMode]         = useState("signup");
-  const [name, setName]         = useState("");
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [mode, setMode]             = useState("signup");
+  const [step, setStep]             = useState("form");
+  const [name, setName]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [otp, setOtp]               = useState("");
+  const [error, setError]           = useState("");
+  const [loading, setLoading]       = useState(false);
 
   const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
 
   const submit = async () => {
     setError(""); setLoading(true);
     try {
-      const body = mode === "signup" ? { name, email, password } : { email, password };
-      const res  = await fetch(`${API}/${mode === "signup" ? "signup" : "login"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      if (mode === "signup") {
+        if (!name || !email || !password || !confirmPass)
+          return setError("All fields are required.");
+        if (password !== confirmPass)
+          return setError("Passwords do not match.");
+        if (password.length < 6)
+          return setError("Password must be at least 6 characters.");
+        const res  = await fetch(`${API}/signup`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json();
+        if (data.success) { setStep("otp"); }
+        else setError(data.error || "Something went wrong.");
+      } else {
+        const res  = await fetch(`${API}/login`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem("sp_token", data.token || "");
+          onLogin({ ...data.user, token: data.token });
+        } else setError(data.error || "Something went wrong.");
+      }
+    } catch { setError("Network error. Please try again."); }
+    setLoading(false);
+  };
+
+  const verifyOtp = async () => {
+    setError(""); setLoading(true);
+    try {
+      const res  = await fetch(`${API}/verify-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("sp_token", data.token || data.user?.token || "");
-        onLogin({ ...data.user, token: data.token || data.user?.token });
-      } else {
-        setError(data.message || "Something went wrong.");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    }
+        localStorage.setItem("sp_token", data.token || "");
+        onLogin({ ...data.user, token: data.token });
+      } else setError(data.error || "Invalid code.");
+    } catch { setError("Network error. Please try again."); }
     setLoading(false);
   };
 
@@ -177,122 +207,76 @@ function AuthModal({ onLogin, onClose }) {
     transition: "border-color 0.15s", background: "#fff",
   };
 
-  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); };
+  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); setConfirmPass(""); setStep("form"); };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: 360, height: 360,
-          borderRadius: 18, background: "#fff",
-          border: `2px solid ${GB}`,
-          boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`,
-          display: "flex", flexDirection: "column",
-          overflow: "hidden", position: "relative",
-        }}
-      >
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 360, borderRadius: 18, background: "#fff", border: `2px solid ${GB}`, boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
         <div style={{ height: 4, background: `linear-gradient(90deg, ${GB}, ${GB2})`, flexShrink: 0 }} />
-        <button onClick={onClose} style={{
-          position: "absolute", top: 12, right: 12,
-          width: 24, height: 24, borderRadius: "50%",
-          background: GBBG, border: `1px solid ${GB}`,
-          cursor: "pointer", fontSize: 11, color: GB2,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontWeight: 700,
-        }}>✕</button>
-
-        <div style={{
-          flex: 1, display: "flex", flexDirection: "column",
-          padding: "14px 24px 18px", gap: 9,
-        }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, width: 24, height: 24, borderRadius: "50%", background: GBBG, border: `1px solid ${GB}`, cursor: "pointer", fontSize: 11, color: GB2, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>✕</button>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "14px 24px 18px", gap: 9 }}>
           <div style={{ textAlign: "center" }}>
             <GrambleLogo size={22} />
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Outfit', sans-serif", fontWeight: 500, marginTop: 3 }}>
-              {mode === "signup" ? "Create your account" : "Welcome back"}
+              {step === "otp" ? "Check your email" : mode === "signup" ? "Create your account" : "Welcome back"}
             </div>
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-            {mode === "signup" && (
-              <input
-                placeholder="Full name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = GB}
-                onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-              />
-            )}
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = GB}
-              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && submit()}
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = GB}
-              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-            />
-          </div>
-
-          {error && (
-            <div style={{
-              fontSize: 11, color: "#e53e3e",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 500,
-              background: "#fff5f5", padding: "5px 10px", borderRadius: 6,
-            }}>{error}</div>
+          {step === "otp" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ fontSize: 12, color: "#64748b", fontFamily: "'Outfit', sans-serif", textAlign: "center" }}>
+                We sent a 6-digit code to <strong>{email}</strong>
+              </div>
+              <input placeholder="Enter 6-digit code" value={otp} onChange={e => setOtp(e.target.value)} onKeyDown={e => e.key === "Enter" && verifyOtp()} maxLength={6}
+                style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 8, fontWeight: 700 }}
+                onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
+              <button onClick={verifyOtp} disabled={loading} style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5 }}>
+                {loading ? "Verifying…" : "Verify & Sign In"}
+              </button>
+              <div style={{ textAlign: "center" }}>
+                <span onClick={() => { setStep("form"); setOtp(""); setError(""); }} style={{ fontSize: 12, color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "'Outfit', sans-serif" }}>← Back</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                {mode === "signup" && (
+                  <input placeholder="Full name" value={name} onChange={e => setName(e.target.value)} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+                )}
+                <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
+                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                  onKeyDown={e => e.key === "Enter" && mode === "login" && submit()} />
+                {mode === "signup" && (
+                  <input type="password" placeholder="Confirm password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+                    onKeyDown={e => e.key === "Enter" && submit()} />
+                )}
+              </div>
+              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
+              <button onClick={submit} disabled={loading}
+                style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5, transition: "background 0.15s" }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
+                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}>
+                {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
+              </button>
+              <div style={{ textAlign: "center" }}>
+                {mode === "signup" ? (
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                    Already have an account?{" "}
+                    <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Log in</span>
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                    New here?{" "}
+                    <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Create a new account</span>
+                  </span>
+                )}
+              </div>
+            </>
           )}
-
-          <button
-            onClick={submit}
-            disabled={loading}
-            style={{
-              padding: "10px", borderRadius: 9, border: "none",
-              background: loading ? GB2 : GB, color: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5,
-              transition: "background 0.15s",
-            }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}
-          >
-            {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
-          </button>
-
-          <div style={{ textAlign: "center" }}>
-            {mode === "signup" ? (
-              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                Already have an account?{" "}
-                <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
-                  Log in
-                </span>
-              </span>
-            ) : (
-              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                New here?{" "}
-                <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
-                  Create a new account
-                </span>
-              </span>
-            )}
-          </div>
         </div>
       </div>
     </div>
@@ -340,7 +324,7 @@ function Layout({ user, onLogin, onLogout }) {
 
   useEffect(() => {
     async function bootStocks() {
-      let symbolsToLoad = [];
+      let symbolsToLoad = DEFAULT_SYMBOLS;
       if (user?.token) {
         try {
           const res  = await fetch(`${BACKEND}/auth/watchlist`, { headers: { Authorization: `Bearer ${user.token}` } });

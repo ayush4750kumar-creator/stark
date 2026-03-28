@@ -1,3 +1,9 @@
-database/
 node_modules/
-database/stockpulse.db
+node_modules/
+FILENAME
+stockpulse-backend/database/stockpulse.db
+stockpulse/node_modules/
+
+node_modules/
+stockpulse/node_modules/
+stockpulse-backend/node_modules/

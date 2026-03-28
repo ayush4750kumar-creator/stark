@@ -42,25 +42,14 @@ function detectStock(text) {
 }
 
 // ── Save to DB ────────────────────────────────────────────────
-function saveArticle(article) {
+async function saveArticle(article) {
   try {
-    const info = db().prepare(`
+    const info = await db().prepare(`
       INSERT INTO articles
         (uuid, symbol, company, headline, full_text, source, source_url, image_url, published_at, agent_source)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'agentB')
-      ON CONFLICT (uuid) DO NOTHING
-    `).run(
-      article.uuid,
-      article.symbol,
-      article.company,
-      article.headline,
-      article.full_text,
-      article.source,
-      article.source_url,
-      article.image_url,
-      article.published_at
-    );
+        (@uuid, @symbol, @company, @headline, @full_text, @source, @source_url, @image_url, @published_at, 'agentB')
+    `).run(article);
     return info.changes > 0;
   } catch (err) {
     console.error("AgentB DB error:", err.message);

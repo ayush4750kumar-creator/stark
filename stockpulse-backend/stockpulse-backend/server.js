@@ -28,7 +28,7 @@ const { dbReady } = require("./config/database");
 dbReady.then(() => {
   const newsRouter          = require("./routes/news");
   const stocksRouter        = require("./routes/stocks");
-  const authRouter          = require("./routes/auth");
+  const { router: authRouter } = require("./routes/auth");
   const categoryFetchRouter = require("./routes/categoryFetchRoute");
   const dataRouter          = require("./routes/dataRoute");
   const intradayRouter      = require("./routes/intradayAgent");
@@ -108,4 +108,5 @@ dbReady.then(() => {
 }).catch(err => {
   console.error("Failed to init database:", err);
   process.exit(1);
-});
+}); 
+ 

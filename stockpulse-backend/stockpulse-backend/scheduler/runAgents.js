@@ -1,29 +1,32 @@
-// scheduler/runAgents.js
-// Python AI runs separately as a persistent process — Node never spawns it
-// Start Python manually: py -3.11 agents/agentC_agentD.py --loop
-
 require("dotenv").config();
 const cron = require("node-cron");
-const { runAgentA } = require("../agents/agentA");
-const { runAgentB } = require("../agents/agentB");
+const { runAgent1 } = require("../agents/agent1_global");
+const { runAgent2 } = require("../agents/agent2_india");
+const { runAgent3 } = require("../agents/agent3_classify");
+const { runAgent4 } = require("../agents/agent4_summarize");
+const { runAgent5 } = require("../agents/agent5_images");
 const { refreshAllPrices } = require("../services/stockPriceService");
-const { prefetchAll } = require("../services/financialsService");
-const { runBatch: runSentimentBatch } = require("../services/sentimentService");
 
 async function runNewsPipeline() {
   console.log("\n" + "═".repeat(50));
-  console.log("📰 NEWS FETCH:", new Date().toLocaleString());
+  console.log("📰 NEWS PIPELINE:", new Date().toLocaleString());
   console.log("═".repeat(50));
   try {
-    await runAgentA();
-    await runAgentB();
-    console.log("✅ News fetch complete (Python AI processes in background)\n");
-    // Run sentiment analysis on fresh articles (non-blocking, after news saved)
-    setTimeout(() => {
-      runSentimentBatch(80).catch(e => console.error("❌ Sentiment error:", e.message));
-    }, 3000);
+    await runAgent1();
+    await runAgent2();
+
+    console.log("\n🔍 Running Agent3 (classify)...");
+    try { await runAgent3(500); } catch(e) { console.error("❌ Agent3 error:", e.message); }
+
+    console.log("\n✍  Running Agent4 (summarize)...");
+    try { await runAgent4(30); } catch(e) { console.error("❌ Agent4 error:", e.message); }
+
+    console.log("\n🖼  Running Agent5 (images)...");
+    try { await runAgent5(50); } catch(e) { console.error("❌ Agent5 error:", e.message); }
+
+    console.log("\n✅ News pipeline complete\n");
   } catch (err) {
-    console.error("❌ News fetch error:", err.message);
+    console.error("❌ Pipeline error:", err.message);
   }
 }
 
@@ -40,57 +43,27 @@ function startScheduler() {
 
   console.log("⏰ Scheduler started");
   console.log(`   Price refresh: every 2 min`);
-  console.log(`   News fetch:    every ${newsMin} min`);
-  console.log("   AI pipeline:   run separately → py -3.11 agents/agentC_agentD.py --loop\n");
+  console.log(`   News pipeline: every ${newsMin} min`);
+  console.log("   Flow: Agent1 → Agent2 → Agent3 → Agent4 → Agent5\n");
 
-  // On startup: prices + news only (NO financials prefetch — it burns AV keys)
   setTimeout(() => {
     runPricePipeline().then(() => runNewsPipeline());
   }, 2000);
 
-  // Sentiment analysis on startup — catch any articles missed since last run
-  setTimeout(() => {
-    console.log("  🧠 Startup sentiment analysis...");
-    runSentimentBatch(200).catch(e => console.error("❌ Sentiment startup error:", e.message));
-  }, 15000);
-
-  // Price every 2 minutes
   setInterval(() => runPricePipeline(), priceSec * 1000);
-
-  // News every N minutes
   cron.schedule(`*/${newsMin} * * * *`, () => runNewsPipeline());
 
-  // Sentiment catch-up every 10 minutes — analyze any remaining neutral articles
-  cron.schedule("*/10 * * * *", () => {
-    runSentimentBatch(30).catch(e => console.error("❌ Sentiment error:", e.message));
-  });
-
-  // Nightly at 10:30pm — pre-fetch financials (AV keys reset daily, safe to run once)
-  // This runs ONCE per day overnight so it doesn't block user requests
-  cron.schedule("30 22 * * *", async () => {
-    console.log("\n📊 NIGHTLY FINANCIALS PRE-FETCH:", new Date().toLocaleString());
-    try { await prefetchAll(); }
-    catch (e) { console.error("❌ Financials pre-fetch error:", e.message); }
-  });
-
-  // Nightly at midnight — delete articles older than 30 days
-  cron.schedule("0 0 * * *", () => {
+  cron.schedule("0 0 * * *", async () => {
     try {
       const { getDB } = require("../config/database");
-      const result = getDB().prepare(
+      const result = await getDB().query(
         "DELETE FROM articles WHERE published_at < NOW() - INTERVAL '30 days'"
-      ).run();
-      console.log(`\n🗑  Cleanup: deleted ${result.changes} articles older than 30 days`);
+      );
+      console.log(`\n🗑  Cleanup: deleted ${result.rowCount} old articles`);
     } catch (e) {
       console.error("❌ Cleanup error:", e.message);
     }
   });
-
-  // NOTE: Startup financials prefetch REMOVED intentionally.
-  // The old code called prefetchAll() on startup which immediately fired
-  // 100+ Alpha Vantage API calls, exhausting all daily quotas before any
-  // user request could succeed. Financials are now fetched on-demand only
-  // (when a user opens the Stats Graphs tab) and cached for 90 days.
 }
 
 module.exports = { startScheduler, runNewsPipeline, runPricePipeline };
