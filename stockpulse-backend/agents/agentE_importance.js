@@ -9,7 +9,7 @@ const { getDB } = require("../config/database");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-const NOISE_SOURCES = ["reddit", "twitter", "x.com", "t.co", "quora", "medium.com", "substack", "blogspot", "wordpress"];
+const NOISE_SOURCES = ["reddit.com", "twitter.com", "x.com", "t.co", "quora.com", "blogspot.com", "wordpress.com"];
 
 function isNoisySource(url = "", source = "") {
   const combined = (url + source).toLowerCase();
