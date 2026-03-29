@@ -371,9 +371,8 @@ export default function FOStocksPage() {
         .fo-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
       `}</style>
 
-      {!isMobile && (
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
-      <div style={{ width:224,flexShrink:0,borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
+      {!isMobile && <div style={{ width:224,flexShrink:0,borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
 
         <div style={{ padding:"14px 14px 8px",borderBottom:"1px solid var(--border)",flexShrink:0 }}>
           <div style={{ fontFamily:"var(--font-display)",fontWeight:800,fontSize:11,color:"var(--text3)",letterSpacing:"0.1em" }}>F&O WATCHLIST</div>
@@ -462,7 +461,7 @@ export default function FOStocksPage() {
             <span style={{ marginLeft:"auto" }}>{(foList.length || FO_LIST.length)} stocks</span>
           </div>
         </div>
-      </div>
+      </div>}
 
       )}
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
