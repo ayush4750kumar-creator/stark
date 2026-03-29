@@ -110,23 +110,23 @@ function StockRow({ s, i, onStockClick }) {
         animation:`fadeIn 0.2s ease forwards`, animationDelay:`${i*0.03}s`, opacity:0,
         cursor: isClickable ? "pointer" : "default",
         transition:"background 0.12s",
-        fontFamily:"'DM Sans', sans-serif",
+        fontFamily:"'Inter', sans-serif",
       }}
     >
       <div style={{display:"flex", alignItems:"center", gap:10}}>
         <CompanyLogo symbol={s.symbol} name={getDisplayName(s)} size={38}/>
         <div>
-          <div style={{fontFamily:"'DM Sans', sans-serif", fontWeight:700, fontSize:13, color:"var(--text)"}}>{getDisplaySymbol(s)}</div>
-          <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:11, color:"var(--text3)", maxWidth:155, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{getDisplayName(s)}</div>
+          <div style={{fontFamily:"'Inter', sans-serif", fontWeight:700, fontSize:13, color:"var(--text)"}}>{getDisplaySymbol(s)}</div>
+          <div style={{fontFamily:"'Inter', sans-serif", fontSize:11, color:"var(--text3)", maxWidth:155, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{getDisplayName(s)}</div>
         </div>
       </div>
       <div style={{textAlign:"right", minWidth:70}}>
         {s.price != null ? (
           <>
-            <div style={{fontFamily:"'DM Sans', sans-serif", fontWeight:700, fontSize:13}}>
+            <div style={{fontFamily:"'Inter', sans-serif", fontWeight:700, fontSize:13}}>
               ₹{Number(s.price).toLocaleString(undefined,{maximumFractionDigits:2})}
             </div>
-            <div style={{fontFamily:"'DM Sans', sans-serif", fontSize:11, fontWeight:700, color:up?"var(--bull)":"var(--bear)"}}>
+            <div style={{fontFamily:"'Inter', sans-serif", fontSize:11, fontWeight:700, color:up?"var(--bull)":"var(--bear)"}}>
               {up?"▲":"▼"} {Math.abs(s.change_pct??0).toFixed(2)}%
             </div>
           </>
@@ -162,7 +162,7 @@ function StockDropdown({ stocks, onStockClick }) {
           border:"1px solid var(--border2)",
           background:"transparent",
           cursor:"pointer",
-          fontFamily:"'DM Sans', sans-serif",
+          fontFamily:"'Inter', sans-serif",
           fontWeight:600,
           fontSize:11,
           color:"var(--text3)",
@@ -188,7 +188,7 @@ function relTime(iso) {
 function NewsSection({ news, loadingN, stocks }) {
   return (
     <div>
-      <div style={{fontSize:11, fontWeight:700, fontFamily:"'DM Sans', sans-serif", color:"var(--text3)", letterSpacing:"0.08em", paddingBottom:10, borderBottom:"1px solid var(--border)", marginBottom:0}}>LATEST NEWS</div>
+      <div style={{fontSize:11, fontWeight:700, fontFamily:"'Inter', sans-serif", color:"var(--text3)", letterSpacing:"0.08em", paddingBottom:10, borderBottom:"1px solid var(--border)", marginBottom:0}}>LATEST NEWS</div>
       {loadingN ? (
         [...Array(4)].map((_,i) => (
           <div key={i} style={{display:"flex", gap:12, padding:"14px 0", borderBottom:"1px solid var(--border)"}}>
@@ -209,7 +209,7 @@ function NewsSection({ news, loadingN, stocks }) {
         return (
           <div key={a.id||i}
             onClick={() => a.source_url && window.open(a.source_url,"_blank","noopener,noreferrer")}
-            style={{display:"flex", gap:12, padding:"14px 0", borderBottom:"1px solid var(--border)", cursor:a.source_url?"pointer":"default", animation:`fadeIn 0.3s ease forwards`, animationDelay:`${i*0.03}s`, opacity:0, fontFamily:"'DM Sans', sans-serif"}}
+            style={{display:"flex", gap:12, padding:"14px 0", borderBottom:"1px solid var(--border)", cursor:a.source_url?"pointer":"default", animation:`fadeIn 0.3s ease forwards`, animationDelay:`${i*0.03}s`, opacity:0, fontFamily:"'Inter', sans-serif"}}
             onMouseEnter={e => { if(a.source_url) e.currentTarget.style.background="var(--bg3)"; }}
             onMouseLeave={e => { e.currentTarget.style.background="transparent"; }}
           >
@@ -371,7 +371,7 @@ export default function CategoryFeedPage({ categoryId, onBack }) {
   }
 
   return (
-    <div style={{fontFamily:"'DM Sans', sans-serif"}}>
+    <div style={{fontFamily:"'Inter', sans-serif"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -381,13 +381,13 @@ export default function CategoryFeedPage({ categoryId, onBack }) {
       {/* Sticky header */}
       <div style={{position:"sticky", top:0, zIndex:10, background:"var(--bg)", paddingTop:4, paddingBottom:12, borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", gap:8, marginBottom:0}}>
         <button onClick={onBack} style={{background:"transparent", border:"none", cursor:"pointer", color:"var(--text3)", fontSize:18, padding:"0 4px 0 0", fontWeight:300, lineHeight:1}}>←</button>
-        <div style={{fontFamily:"'DM Sans', sans-serif", fontWeight:800, fontSize:17, color:"var(--text)"}}>{label}</div>
+        <div style={{fontFamily:"'Inter', sans-serif", fontWeight:800, fontSize:17, color:"var(--text)"}}>{label}</div>
         {(loadingS||loadingN) && <div style={{width:13, height:13, borderRadius:"50%", border:"2px solid var(--border2)", borderTopColor:"var(--text)", animation:"spin 0.8s linear infinite"}}/>}
       </div>
 
       {/* Stocks section */}
       <div style={{marginTop:16, marginBottom:24}}>
-        <div style={{fontSize:11, fontWeight:700, fontFamily:"'DM Sans', sans-serif", color:"var(--text3)", letterSpacing:"0.08em", marginBottom:8}}>
+        <div style={{fontSize:11, fontWeight:700, fontFamily:"'Inter', sans-serif", color:"var(--text3)", letterSpacing:"0.08em", marginBottom:8}}>
           {["trending","gainers","losers"].includes(categoryId) ? "TOP 10 TODAY" : "STOCKS"}
         </div>
         {loadingS ? (

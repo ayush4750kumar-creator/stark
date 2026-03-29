@@ -16,7 +16,7 @@ export default function RightSidebar({ onSelectCategory }) {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-        .rs-sidebar * { font-family: 'DM Sans', sans-serif !important; box-sizing: border-box; }
+        .rs-sidebar * { font-family: 'Inter', sans-serif !important; box-sizing: border-box; }
         .rs-tile {
           border-radius: 6px;
           border: 1px solid var(--border);
