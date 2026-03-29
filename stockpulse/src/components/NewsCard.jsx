@@ -365,7 +365,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
       {/* Sentiment pill — top-left */}
       {sentDir !== "neutral" && (
         <div style={{
-          position: "absolute", top: 12, right: 12, zIndex: 10,
+          position: "absolute", top: 12, left: 12, zIndex: 10,
           background: sentDir === "bullish" ? "rgba(74,222,128,0.88)" : "rgba(255,107,107,0.88)",
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           borderRadius: 20, padding: "3px 10px",
@@ -389,10 +389,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           onError={e => { e.target.onerror = null; e.target.src = getTopicImageUrl(news.headline, news.symbol); }}
         />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(to bottom, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.28) 60%, rgba(0,0,0,0.60) 100%)",
-        }} />
+
       </div>
 
       {/* Top: label + price */}
@@ -419,23 +416,21 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
 
       <div style={{ flex: 1 }} />
 
-      {/* Bottom overlay */}
+      {/* Bottom section — white background */}
       <div style={{
         position: "relative",
-        background: "rgba(5,3,1,0.35)",
-        backdropFilter: "blur(18px) saturate(1.4)",
-        WebkitBackdropFilter: "blur(18px) saturate(1.4)",
-        borderTop: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--bg)",
+        borderTop: "1px solid var(--border)",
         padding: "14px 16px 0",
       }}>
 
         {/* Meta: time · source */}
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{displayTime}</span>
+          <span style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--font-display)" }}>{displayTime}</span>
           {news.source && (
             <>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)" }}>·</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{news.source}</span>
+              <span style={{ fontSize: 10, color: "var(--text3)" }}>·</span>
+              <span style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--font-display)" }}>{news.source}</span>
             </>
           )}
         </div>
@@ -444,16 +439,16 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
           <button
             onClick={e => { e.stopPropagation(); openSource(); }}
-            style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "rgba(255,255,255,0.85)", transition: "background 0.2s, color 0.2s" }}
+            style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s, color 0.2s" }}
             onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
           >Read Article ↗</button>
           {!isMarket && (
             <button
               onClick={e => { e.stopPropagation(); window.__openDashboard && window.__openDashboard(news.symbol, news.company || news.symbol); }}
-              style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "rgba(255,255,255,0.85)", transition: "background 0.2s, color 0.2s" }}
+              style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s, color 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
             >Stock Analysis →</button>
           )}
           {!isMarket && onTrack && (
@@ -466,53 +461,20 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         </div>
 
         {/* Headline — exactly as-is */}
-        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "rgba(255,255,255,0.95)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "var(--text)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
           {news.headline}
         </p>
 
-        {/* Summary preview — collapsed: ~10 words */}
-        {collapsedPreview && !expanded && (
-          <p style={{ fontSize: 12, lineHeight: 1.65, color: "rgba(255,255,255,0.55)", margin: "0 0 6px", fontFamily: "var(--font-body)" }}>
-            {collapsedPreview}
-          </p>
-        )}
 
-        {/* "more" / "less" pill */}
-        {hasMore && (
-          <button
-            onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              background: expanded ? SKY_BLUE_BG : "none",
-              border: expanded ? `1px solid ${SKY_BLUE_BORDER}` : "none",
-              borderRadius: expanded ? 20 : 0,
-              padding: expanded ? "2px 10px 2px" : "0 0 8px",
-              fontSize: 11, fontWeight: 700,
-              fontFamily: "var(--font-display)",
-              color: expanded ? SKY_BLUE : "rgba(255,255,255,0.32)",
-              cursor: "pointer",
-              letterSpacing: "0.04em",
-              transition: "color 0.2s, background 0.2s",
-              marginBottom: expanded ? 6 : 0,
-            }}
-            onMouseEnter={e => { if (!expanded) e.currentTarget.style.color = "rgba(255,255,255,0.65)"; }}
-            onMouseLeave={e => { if (!expanded) e.currentTarget.style.color = "rgba(255,255,255,0.32)"; }}
-          >
-            {expanded ? "▲ less" : "▼ more"}
-          </button>
-        )}
 
-        {/* Expanded section */}
-        <div style={{
-          overflow: "hidden",
-          maxHeight: expanded ? "500px" : "0px",
-          transition: "max-height 0.35s ease",
-        }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 10 }}>
+
+
+        {/* Summary always visible */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 10 }}>
 
             {/* Full summary (50–60 words) */}
-            {expandedSummary && (
-              <p style={{ fontSize: 12, lineHeight: 1.7, color: "rgba(255,255,255,0.62)", margin: 0, fontFamily: "var(--font-body)" }}>
+            {expandedSummary && true && (
+              <p style={{ fontSize: 12, lineHeight: 1.7, color: "var(--text2)", margin: 0, fontFamily: "var(--font-body)" }}>
                 {expandedSummary}
               </p>
             )}
@@ -585,7 +547,6 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
               </button>
             </div>
 
-          </div>
         </div>
 
         <div style={{ height: 8 }} />
