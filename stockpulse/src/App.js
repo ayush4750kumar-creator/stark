@@ -21,9 +21,9 @@ const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
 // ── Gramble brand palette ──────────────────────────────────────────────────
-const GB   = "#6AAFE6";   // gramble sky-blue (.in colour) — matched from logo
-const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
-const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
+const GB   = "#6AAFE6";
+const GB2  = "#5BA3DD";
+const GBBG = "#EAF4FC";
 // ──────────────────────────────────────────────────────────────────────────
 
 const DEFAULT_SYMBOLS = [];
@@ -35,7 +35,6 @@ function FontInjector() {
     const link = document.createElement("link");
     link.id   = "gramble-font";
     link.rel  = "stylesheet";
-    // Load both Outfit and Inter Black for the logo
     link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap";
     document.head.appendChild(link);
     const style = document.createElement("style");
@@ -55,19 +54,10 @@ function FontInjector() {
   return null;
 }
 
-// ── gramble.in Logo ────────────────────────────────────────────────────────
-// Matches the uploaded brand mark exactly:
-//   • "gramble" — near-black (#111), ultra-heavy weight, rounded/wide letterforms
-//   • "."       — sky-blue, same weight, circular dot (the period in ".in")
-//   • "in"      — sky-blue, same ultra-heavy weight
-//   • No gap between "gramble" and ".in" — the dot sits flush
-//   • letterSpacing slightly tight (like the logo)
-// The `size` prop scales everything proportionally.
 function GrambleLogo({ size = 28 }) {
   return (
     <span
       style={{
-        // Inter Black is the closest Google Font match to the logo's rounded heavy sans
         fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
         fontWeight: 900,
         fontSize: size,
@@ -80,7 +70,6 @@ function GrambleLogo({ size = 28 }) {
       }}
     >
       <span style={{ color: "#111" }}>gramble</span>
-      {/* The dot is part of ".in" — rendered in sky-blue, no extra spacing */}
       <span style={{ color: GB }}>.</span>
       <span style={{ color: GB }}>in</span>
     </span>
@@ -90,55 +79,6 @@ function GrambleLogo({ size = 28 }) {
 // ── Collapsible search bar ────────────────────────────────────────────────
 function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar onAddTracked={onAddTracked} onSelectStock={onSelectStock} />; }
 
-function CollapsibleSearch_OLD({ onAddTracked, onSelectStock }) {
-  const [expanded, setExpanded] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setExpanded(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={wrapRef} style={{ display: "flex", alignItems: "center", position: "relative" }}>
-      <button
-        onClick={() => setExpanded(v => !v)}
-        style={{
-          width: 34, height: 34, borderRadius: 9,
-          border: `1.5px solid ${expanded ? GB : "var(--border2)"}`,
-          background: expanded ? GBBG : "transparent",
-          color: expanded ? GB2 : "var(--text3)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
-        }}
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-      </button>
-      <div style={{
-        overflow: "hidden",
-        maxWidth: expanded ? 280 : 0,
-        opacity: expanded ? 1 : 0,
-        transition: "max-width 0.25s ease, opacity 0.2s ease",
-        marginLeft: expanded ? 8 : 0,
-      }}>
-        <div style={{ width: 280 }}>
-          <SearchBar
-            onAddTracked={onAddTracked}
-            onSelectStock={(s) => { onSelectStock(s); setExpanded(false); }}
-            autoFocus={expanded}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Inline auth modal ─────────────────────────────────────────────────────
 // ── Inline auth modal ─────────────────────────────────────────────────────
 function AuthModal({ onLogin, onClose }) {
   const [mode, setMode]             = useState("signup");
@@ -285,20 +225,15 @@ function AuthModal({ onLogin, onClose }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-
 // ── Mobile Profile Menu ───────────────────────────────────────────────────
 function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
-
   React.useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-
   const NAV_ITEMS = [
     { label: "World Markets", icon: "🌍", sub: [
       { label: "Trending Today", id: "trending" },
@@ -324,9 +259,7 @@ function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
     { label: "Bonds",               icon: "📜", path: "/more/bonds"        },
     { label: "Crypto",              icon: "₿",  path: "/more/crypto"       },
   ];
-
   const [marketsOpen, setMarketsOpen] = React.useState(false);
-
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div
@@ -341,7 +274,6 @@ function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
       >
         {user.initials}
       </div>
-
       {open && (
         <div style={{
           position: "fixed", top: 60, right: 10, left: 10, zIndex: 9999,
@@ -354,61 +286,88 @@ function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
             <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{user.name}</div>
             <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{user.email}</div>
           </div>
-
           {/* World Markets expandable */}
           <div
             onClick={() => setMarketsOpen(v => !v)}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--border)", cursor: "pointer", background: marketsOpen ? "var(--bg2)" : "transparent" }}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 16px", cursor: "pointer",
+              borderBottom: marketsOpen ? "none" : "1px solid var(--border)",
+              background: marketsOpen ? "var(--bg2)" : "transparent",
+            }}
           >
-            <span style={{ fontSize: 16 }}>🌍</span>
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)", flex: 1 }}>World Markets</span>
-            <span style={{ fontSize: 11, color: "var(--text3)" }}>{marketsOpen ? "▲" : "▼"}</span>
-          </div>
-          {marketsOpen && NAV_ITEMS[0].sub.map(item => (
-            <div
-              key={item.id}
-              onClick={() => { onSelectCategory(item.id); setOpen(false); }}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px 10px 36px", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-            >
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: "var(--text2)" }}>{item.label}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>🌍</span>
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>World Markets</span>
             </div>
-          ))}
-
+            <span style={{ fontSize: 10, color: "var(--text3)", transform: marketsOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
+          </div>
+          {marketsOpen && (
+            <div style={{ borderBottom: "1px solid var(--border)" }}>
+              {NAV_ITEMS[0].sub.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => { onSelectCategory(item.id); setOpen(false); }}
+                  style={{
+                    padding: "10px 16px 10px 42px", cursor: "pointer",
+                    fontFamily: "'Outfit', sans-serif", fontSize: 12.5,
+                    color: "var(--text2)", fontWeight: 500,
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                  onTouchStart={e => e.currentTarget.style.background = "var(--bg2)"}
+                  onTouchEnd={e => e.currentTarget.style.background = "transparent"}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          )}
           {/* Other nav items */}
-          {NAV_ITEMS.slice(1).map(item => (
+          {NAV_ITEMS.slice(1).map((item) => (
             <div
               key={item.label}
-              onClick={() => { if (window.__setOverlay) window.__setOverlay(item.path); setOpen(false); }}
-              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              onClick={() => {
+                if (window.__setOverlay) window.__setOverlay(item.path);
+                setOpen(false);
+              }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "12px 16px", cursor: "pointer",
+                borderBottom: "1px solid var(--border)",
+                fontFamily: "'Outfit', sans-serif", fontWeight: 600,
+                fontSize: 13, color: "var(--text2)",
+              }}
+              onTouchStart={e => e.currentTarget.style.background = "var(--bg2)"}
+              onTouchEnd={e => e.currentTarget.style.background = "transparent"}
             >
               <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>{item.label}</span>
+              {item.label}
             </div>
           ))}
-
           {/* Logout */}
           <div
             onClick={() => { onLogout(); setOpen(false); }}
-            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", cursor: "pointer", color: "#e53e3e" }}
-            onMouseEnter={e => e.currentTarget.style.background = "#fff5f5"}
-            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "12px 16px", cursor: "pointer",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 600,
+              fontSize: 13, color: "#e53e3e",
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
               <line x1="21" y1="12" x2="9" y2="12"/>
             </svg>
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13 }}>Logout</span>
+            Logout
           </div>
         </div>
       )}
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function Layout({ user, onLogin, onLogout }) {
   const [trackedStocks, setTrackedStocks] = useState([]);
@@ -613,7 +572,7 @@ function Layout({ user, onLogin, onLogout }) {
         gap: isMobile ? 10 : 16,
       }}>
 
-        {/* ── LOGO — click to go home ── */}
+        {/* ── LOGO ── */}
         <div
           style={{ display: "flex", alignItems: "center", flexShrink: 0, cursor: "pointer" }}
           onClick={() => {
@@ -621,10 +580,6 @@ function Layout({ user, onLogin, onLogout }) {
             if (window.__isDashboardOpen && window.__isDashboardOpen()) window.__closeDashboard && window.__closeDashboard();
           }}
         >
-          {/*
-            Desktop: size=38 → big, prominent, matches brand mark proportions
-            Mobile:  size=28 → still readable, fits header
-          */}
           <GrambleLogo size={isMobile ? 28 : 38} />
         </div>
 
@@ -650,37 +605,38 @@ function Layout({ user, onLogin, onLogout }) {
 
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 9,
-                background: `linear-gradient(135deg, ${GB}, ${GB2})`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 800,
-                color: "#fff", fontSize: 12, flexShrink: 0,
-              }}>
-                {user.initials}
-              </div>
-              {!isMobile && (
-                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
-                  {user.name}
-                </span>
+              {isMobile ? (
+                <MobileProfileMenu
+                  user={user}
+                  onLogout={onLogout}
+                  GB={GB}
+                  GB2={GB2}
+                  onSelectCategory={(catId) => handleFilterChange("cat:" + catId)}
+                />
+              ) : (
+                <>
+                  <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
+                    {user.name}
+                  </span>
+                  <button onClick={onLogout} style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    padding: "6px 11px", borderRadius: 8, background: "transparent",
+                    border: "1px solid var(--border2)", color: "var(--text3)",
+                    cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+                    transition: "all 0.2s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#fc8181"; e.currentTarget.style.color = "#e53e3e"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                  </button>
+                </>
               )}
-              <button onClick={onLogout} style={{
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "6px 11px", borderRadius: 8, background: "transparent",
-                border: "1px solid var(--border2)", color: "var(--text3)",
-                cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
-                transition: "all 0.2s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#fc8181"; e.currentTarget.style.color = "#e53e3e"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/>
-                  <line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                {!isMobile && "Logout"}
-              </button>
             </div>
           ) : (
             <button
