@@ -371,6 +371,7 @@ export default function FOStocksPage() {
         .fo-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
       `}</style>
 
+      {!isMobile && (
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
       <div style={{ width:224,flexShrink:0,borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
 
@@ -463,6 +464,7 @@ export default function FOStocksPage() {
         </div>
       </div>
 
+      )}
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0 }}>
 
