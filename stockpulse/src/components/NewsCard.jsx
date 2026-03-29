@@ -565,7 +565,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
                 Read Article ↗
               </button>
               <button
-                onClick={e => { e.stopPropagation(); openDetailPage("performance"); }}
+                onClick={e => { e.stopPropagation(); if(news.symbol && news.symbol !== "MARKET") { window.__openDashboard && window.__openDashboard(news.symbol, news.company || news.symbol); } else { openDetailPage("performance"); } }}
                 style={{
                   flex: 1, padding: "7px 0", borderRadius: 8,
                   fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
