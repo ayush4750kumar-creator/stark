@@ -1,4 +1,3 @@
-// src/components/RightSidebar.jsx
 const CATEGORIES = [
   { id: "trending", label: "Trending Today",  tag: "LIVE",  tagColor: "#ef4444", desc: "Most active right now"      },
   { id: "gainers",  label: "Top Gainers",     tag: "TODAY", tagColor: "#22c55e", desc: "Biggest movers up"          },
@@ -42,14 +41,9 @@ export default function RightSidebar({ onSelectCategory }) {
           <div className="rs-header-title">WORLD MARKETS</div>
           <div className="rs-header-sub">Tap a category to explore</div>
         </div>
-
         <div style={{ padding: "0 10px 16px", display: "flex", flexDirection: "column", gap: 5 }}>
           {CATEGORIES.map((cat) => (
-            <div
-              key={cat.id}
-              className="rs-tile"
-              onClick={() => onSelectCategory && onSelectCategory(cat.id)}
-            >
+            <div key={cat.id} className="rs-tile" onClick={() => onSelectCategory && onSelectCategory(cat.id)}>
               <div className="rs-tile-header">
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
