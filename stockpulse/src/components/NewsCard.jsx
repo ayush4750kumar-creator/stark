@@ -348,6 +348,8 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
     navigate(`/news/${news.id}?tab=${tab}`);
   }
 
+  const isTracked = trackedSymbols.includes(news.symbol);
+
   return (
     <div
       className="card"
@@ -358,74 +360,73 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         opacity: 0,
         display: "flex",
         flexDirection: "column",
-        minHeight: 320,
         position: "relative",
+        background: "var(--bg)",
+        border: "1px solid var(--border)",
+        borderRadius: 14,
       }}
     >
-      {/* Sentiment pill — top-left */}
-      {sentDir !== "neutral" && (
-        <div style={{
-          position: "absolute", top: 12, left: 12, zIndex: 10,
-          background: sentDir === "bullish" ? "rgba(74,222,128,0.88)" : "rgba(255,107,107,0.88)",
-          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          borderRadius: 20, padding: "3px 10px",
-          fontSize: 10, fontWeight: 800,
-          fontFamily: "var(--font-display)", color: "#fff",
-          letterSpacing: "0.06em",
-          boxShadow: sentDir === "bullish"
-            ? "0 2px 8px rgba(74,222,128,0.45)"
-            : "0 2px 8px rgba(255,107,107,0.45)",
-        }}>
-          {sentDir === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
-        </div>
-      )}
-
-
-
-      {/* Background image */}
-      <div style={{ position: "absolute", inset: 0 }}>
+      {/* Full image — no fade */}
+      <div style={{ position: "relative", width: "100%", height: 200, flexShrink: 0 }}>
         <img
           src={imgUrl} alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           onError={e => { e.target.onerror = null; e.target.src = getTopicImageUrl(news.headline, news.symbol); }}
         />
 
-      </div>
-
-      {/* Top: label + price */}
-      <div style={{ position: "relative", padding: "16px 16px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 13, color: "rgba(255,255,255,0.92)", letterSpacing: "0.08em", textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
-            {label}
+        {/* Sentiment pill — top-left, not overlapping price */}
+        {sentDir !== "neutral" && (
+          <div style={{
+            position: "absolute", top: 10, left: 10, zIndex: 10,
+            background: sentDir === "bullish" ? "rgba(74,222,128,0.92)" : "rgba(255,107,107,0.92)",
+            borderRadius: 20, padding: "3px 10px",
+            fontSize: 10, fontWeight: 800,
+            fontFamily: "var(--font-display)", color: "#fff",
+            letterSpacing: "0.06em",
+          }}>
+            {sentDir === "bullish" ? "▲ BULLISH" : "▼ BEARISH"}
           </div>
-          {subLabel && subLabel !== label && (
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-display)", fontWeight: 500 }}>
-              {subLabel}
+        )}
+
+        {/* Stock label + price — top-right */}
+        <div style={{ position: "absolute", top: 10, right: 10, zIndex: 10, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+          {!isMarket && onTrack && (
+            <button
+              onClick={e => { e.stopPropagation(); onTrack({ symbol: news.symbol, name: news.company || news.symbol }); }}
+              title={isTracked ? "In watchlist" : "Add to watchlist"}
+              style={{
+                padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                cursor: "pointer", border: "none",
+                background: isTracked ? "rgba(74,222,128,0.92)" : "rgba(0,0,0,0.55)",
+                color: "#fff",
+                fontFamily: "var(--font-display)",
+              }}
+            >{isTracked ? "✓ Watching" : "+ Watchlist"}</button>
+          )}
+          {!isMarket && news.price != null && (
+            <div style={{ background: "rgba(0,0,0,0.55)", borderRadius: 8, padding: "4px 10px", textAlign: "right" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: "#fff" }}>{news.price.toLocaleString()}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: (news.change ?? 0) >= 0 ? "#6ee7b7" : "#fca5a5" }}>
+                {news.change != null ? `${changeSign}${news.change}%` : ""}
+              </div>
             </div>
           )}
         </div>
-        {!isMarket && news.price != null && (
-          <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderRadius: 8, padding: "5px 10px", textAlign: "right", border: "1px solid rgba(255,255,255,0.18)" }}>
-            <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.9)" }}>{news.price.toLocaleString()}</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: (news.change ?? 0) >= 0 ? "#6ee7b7" : "#fca5a5" }}>
-              {news.change != null ? `${changeSign}${news.change}%` : ""}
-            </div>
-          </div>
-        )}
+
+        {/* Sector/Market label — top-left below sentiment */}
+        <div style={{ position: "absolute", bottom: 10, left: 10, zIndex: 10 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12, color: "rgba(255,255,255,0.92)", letterSpacing: "0.06em", textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>{label}</div>
+          {subLabel && subLabel !== label && (
+            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-display)" }}>{subLabel}</div>
+          )}
+        </div>
       </div>
 
-      <div style={{ flex: 1 }} />
-
-      {/* Bottom section — white background */}
-      <div style={{
-        position: "relative",
-        background: "var(--bg)",
-        borderTop: "1px solid var(--border)",
-        padding: "14px 16px 0",
-      }}>
+      {/* White content area */}
+      <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
 
         {/* Meta: time · source */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 7, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
           <span style={{ fontSize: 11, color: "var(--text3)", fontFamily: "var(--font-display)" }}>{displayTime}</span>
           {news.source && (
             <>
@@ -435,121 +436,55 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
           )}
         </div>
 
-        {/* Action buttons — above headline */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 8 }}>
           <button
             onClick={e => { e.stopPropagation(); openSource(); }}
-            style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s, color 0.2s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
-            onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
+            style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; }}
           >Read Article ↗</button>
           {!isMarket && (
             <button
               onClick={e => { e.stopPropagation(); window.__openDashboard && window.__openDashboard(news.symbol, news.company || news.symbol); }}
-              style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s, color 0.2s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
-              onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
+              style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: SKY_BLUE_BG, border: `1px solid ${SKY_BLUE_BORDER}`, color: SKY_BLUE, transition: "background 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; }}
             >Stock Analysis →</button>
-          )}
-          {!isMarket && onTrack && (
-            <button
-              onClick={e => { e.stopPropagation(); onTrack({ symbol: news.symbol, name: news.company || news.symbol }); }}
-              title={trackedSymbols.includes(news.symbol) ? "In watchlist" : "Add to watchlist"}
-              style={{ width: 34, flexShrink: 0, padding: "6px 0", borderRadius: 8, fontSize: 16, fontWeight: 800, cursor: "pointer", background: trackedSymbols.includes(news.symbol) ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.12)", border: trackedSymbols.includes(news.symbol) ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(255,255,255,0.22)", color: trackedSymbols.includes(news.symbol) ? "#4ade80" : "rgba(255,255,255,0.85)", transition: "background 0.2s" }}
-            >{trackedSymbols.includes(news.symbol) ? "✓" : "+"}</button>
           )}
         </div>
 
-        {/* Headline — exactly as-is */}
-        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "var(--text)", margin: "0 0 8px", letterSpacing: "-0.01em" }}>
+        {/* Headline */}
+        <p style={{ fontFamily: "var(--font-headline)", fontWeight: 700, fontSize: 15, lineHeight: 1.35, color: "var(--text)", margin: 0, letterSpacing: "-0.01em" }}>
           {news.headline}
         </p>
 
+        {/* Full summary — always visible */}
+        {expandedSummary && (
+          <p style={{ fontSize: 12, lineHeight: 1.7, color: "var(--text2)", margin: 0, fontFamily: "var(--font-body)" }}>
+            {expandedSummary}
+          </p>
+        )}
 
-
-
-
-        {/* Summary always visible */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 10 }}>
-
-            {/* Full summary (50–60 words) */}
-            {expandedSummary && true && (
-              <p style={{ fontSize: 12, lineHeight: 1.7, color: "var(--text2)", margin: 0, fontFamily: "var(--font-body)" }}>
-                {expandedSummary}
-              </p>
-            )}
-
-            {/* Sentiment row */}
-            {sentiment && (
-              <div style={{
-                display: "flex", alignItems: "flex-start", gap: 8,
-                background: sentDir === "bullish" ? "rgba(74,222,128,0.08)" : sentDir === "bearish" ? "rgba(255,107,107,0.08)" : "rgba(255,255,255,0.05)",
-                border: `1px solid ${sentDir === "bullish" ? "rgba(74,222,128,0.22)" : sentDir === "bearish" ? "rgba(255,107,107,0.22)" : "rgba(255,255,255,0.10)"}`,
-                borderRadius: 8, padding: "7px 10px",
-              }}>
-                <span style={{ fontSize: 14, flexShrink: 0 }}>
-                  {sentDir === "bullish" ? "📈" : sentDir === "bearish" ? "📉" : "➡️"}
-                </span>
-                <span style={{
-                  fontSize: 11, lineHeight: 1.6, fontFamily: "var(--font-body)",
-                  color: sentDir === "bullish" ? "rgba(74,222,128,0.9)" : sentDir === "bearish" ? "rgba(255,107,107,0.9)" : "rgba(255,255,255,0.50)",
-                }}>
-                  {sentiment.replace(/^sentiment:\s*/i, "")}
-                </span>
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={e => { e.stopPropagation(); openSource(); }}
-                style={{
-                  flex: 1, padding: "7px 0", borderRadius: 8,
-                  fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
-                  cursor: "pointer",
-                  background: SKY_BLUE_BG,
-                  border: `1px solid ${SKY_BLUE_BORDER}`,
-                  color: SKY_BLUE,
-                  transition: "background 0.2s, color 0.2s",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(56,189,248,0.28)";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = SKY_BLUE_BG;
-                  e.currentTarget.style.color = SKY_BLUE;
-                }}
-              >
-                Read Article ↗
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); if(news.symbol && news.symbol !== "MARKET") { window.__openDashboard && window.__openDashboard(news.symbol, news.company || news.symbol); } else { openDetailPage("performance"); } }}
-                style={{
-                  flex: 1, padding: "7px 0", borderRadius: 8,
-                  fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)",
-                  cursor: "pointer",
-                  background: SKY_BLUE_BG,
-                  border: `1px solid ${SKY_BLUE_BORDER}`,
-                  color: SKY_BLUE,
-                  transition: "background 0.2s, color 0.2s",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(56,189,248,0.28)";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = SKY_BLUE_BG;
-                  e.currentTarget.style.color = SKY_BLUE;
-                }}
-              >
-                Stock Analysis →
-              </button>
-            </div>
-
-        </div>
-
-        <div style={{ height: 8 }} />
+        {/* Sentiment analysis */}
+        {sentiment && (
+          <div style={{
+            display: "flex", alignItems: "flex-start", gap: 8,
+            background: sentDir === "bullish" ? "rgba(74,222,128,0.08)" : sentDir === "bearish" ? "rgba(255,107,107,0.08)" : "var(--bg3)",
+            border: `1px solid ${sentDir === "bullish" ? "rgba(74,222,128,0.22)" : sentDir === "bearish" ? "rgba(255,107,107,0.22)" : "var(--border)"}`,
+            borderRadius: 8, padding: "7px 10px",
+          }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>
+              {sentDir === "bullish" ? "📈" : sentDir === "bearish" ? "📉" : "➡️"}
+            </span>
+            <span style={{
+              fontSize: 11, lineHeight: 1.6, fontFamily: "var(--font-body)",
+              color: sentDir === "bullish" ? "var(--bull)" : sentDir === "bearish" ? "var(--bear)" : "var(--text3)",
+            }}>
+              {sentiment.replace(/^sentiment:\s*/i, "")}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
