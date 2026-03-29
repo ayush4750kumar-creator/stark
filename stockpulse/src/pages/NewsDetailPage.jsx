@@ -970,7 +970,10 @@ export default function NewsDetailPage() {
   const isUp    = (chgPct??0) >= 0;
 
   return (
-    <div style={{ maxWidth:800, margin:"0 auto", padding:"16px 16px 80px" }}>
+    <div style={{ display:"flex", gap:24, maxWidth:1400, margin:"0 auto", padding:"16px 24px 80px" }}>
+      {/* Left sidebar placeholder */}
+      <div style={{ width:220, flexShrink:0, display:"var(--sidebar-display, block)" }} />
+      <div style={{ flex:1, maxWidth:800 }}>
       <style>{"@keyframes spin{to{transform:rotate(360deg)}} @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}"}</style>
 
       <button onClick={()=>navigate(-1)}
@@ -1038,7 +1041,8 @@ export default function NewsDetailPage() {
           <a href={article.source_url || article.sourceUrl} target="_blank" rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             style={{ marginLeft:"auto", flexShrink:0, display:"flex", alignItems:"center", gap:5,
-              padding:"6px 12px", borderRadius:8, background:"var(--accent)", color:"#000",
+              padding:"6px 12px", borderRadius:8, background:"transparent", color:"var(--accent)",
+              border:"1px solid var(--accent)",
               fontFamily:"var(--font-display)", fontSize:11, fontWeight:700,
               textDecoration:"none", whiteSpace:"nowrap" }}>
             Read Article ↗
@@ -1049,6 +1053,9 @@ export default function NewsDetailPage() {
       {tab==="PERFORMANCE"  && <PerformanceTab stock={stock} isStock={isStock} sym={sym} />}
       {tab==="STATS GRAPHS" && <StatsGraphsTab sym={sym} isStock={isStock} />}
       {tab==="ALL NEWS"     && <AllNewsTab sym={sym} isStock={isStock} navigate={navigate} />}
+      </div>
+      {/* Right sidebar placeholder */}
+      <div style={{ width:220, flexShrink:0, display:"var(--sidebar-display, block)" }} />
     </div>
   );
 }
