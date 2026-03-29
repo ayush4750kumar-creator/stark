@@ -365,7 +365,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
       {/* Sentiment pill — top-left */}
       {sentDir !== "neutral" && (
         <div style={{
-          position: "absolute", top: 12, left: 12, zIndex: 10,
+          position: "absolute", top: 12, right: 12, zIndex: 10,
           background: sentDir === "bullish" ? "rgba(74,222,128,0.88)" : "rgba(255,107,107,0.88)",
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           borderRadius: 20, padding: "3px 10px",
@@ -380,35 +380,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         </div>
       )}
 
-      {/* Read button — permanent, top-right corner */}
-      <button
-        onClick={e => { e.stopPropagation(); openSource(); }}
-        style={{
-          position: "absolute", top: 12, right: 12, zIndex: 10,
-          background: "rgba(0,0,0,0.45)",
-          backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          border: "1px solid rgba(255,255,255,0.22)",
-          borderRadius: 20, padding: "4px 12px",
-          fontSize: 11, fontWeight: 700,
-          fontFamily: "var(--font-display)",
-          color: "rgba(255,255,255,0.85)",
-          cursor: "pointer",
-          letterSpacing: "0.04em",
-          transition: "background 0.2s, color 0.2s",
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = SKY_BLUE_BG;
-          e.currentTarget.style.color = SKY_BLUE;
-          e.currentTarget.style.borderColor = SKY_BLUE_BORDER;
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = "rgba(0,0,0,0.45)";
-          e.currentTarget.style.color = "rgba(255,255,255,0.85)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)";
-        }}
-      >
-        Read ↗
-      </button>
+
 
       {/* Background image */}
       <div style={{ position: "absolute", inset: 0 }}>
@@ -465,6 +437,31 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.22)" }}>·</span>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "var(--font-display)" }}>{news.source}</span>
             </>
+          )}
+        </div>
+
+        {/* Action buttons — above headline */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <button
+            onClick={e => { e.stopPropagation(); openSource(); }}
+            style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "rgba(255,255,255,0.85)", transition: "background 0.2s, color 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; }}
+          >Read Article ↗</button>
+          {!isMarket && (
+            <button
+              onClick={e => { e.stopPropagation(); window.__openDashboard && window.__openDashboard(news.symbol, news.company || news.symbol); }}
+              style={{ flex: 1, padding: "6px 0", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-display)", cursor: "pointer", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.22)", color: "rgba(255,255,255,0.85)", transition: "background 0.2s, color 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = SKY_BLUE_BG; e.currentTarget.style.color = SKY_BLUE; e.currentTarget.style.borderColor = SKY_BLUE_BORDER; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.22)"; }}
+            >Stock Analysis →</button>
+          )}
+          {!isMarket && onTrack && (
+            <button
+              onClick={e => { e.stopPropagation(); onTrack({ symbol: news.symbol, name: news.company || news.symbol }); }}
+              title={trackedSymbols.includes(news.symbol) ? "In watchlist" : "Add to watchlist"}
+              style={{ width: 34, flexShrink: 0, padding: "6px 0", borderRadius: 8, fontSize: 16, fontWeight: 800, cursor: "pointer", background: trackedSymbols.includes(news.symbol) ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.12)", border: trackedSymbols.includes(news.symbol) ? "1px solid rgba(74,222,128,0.4)" : "1px solid rgba(255,255,255,0.22)", color: trackedSymbols.includes(news.symbol) ? "#4ade80" : "rgba(255,255,255,0.85)", transition: "background 0.2s" }}
+            >{trackedSymbols.includes(news.symbol) ? "✓" : "+"}</button>
           )}
         </div>
 
