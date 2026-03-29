@@ -56,20 +56,19 @@ async function fetchGlobalNews(priceMap) {
       const sym   = a.symbol || "MARKET";
       const price = priceMap[sym];
       return {
-        id:           a.id,
-        symbol:       sym,
-        company:      a.company      || "Market",
-        headline:     a.headline,
-        summary:      a.summary_20   || a.headline,
-        summary_long: a.summary_long || null,
-        sentiment:    a.sentiment    || "neutral",
-        image:        a.image_url    || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80",
-        time:         relativeTime(a.published_at),
-        source:       a.source       || "StockPulse",
-        sourceUrl:    a.source_url   || "",
-        publishedAt:  a.published_at,
-        price:        price?.price   ?? null,
-        change:       price?.change  ?? null,
+        id:          a.id,
+        symbol:      sym,
+        company:     a.company     || "Market",
+        headline:    a.headline,
+        summary:     a.summary_20  || a.headline,
+        sentiment:   a.sentiment   || "neutral",
+        image:       a.image_url   || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80",
+        time:        relativeTime(a.published_at),
+        source:      a.source      || "StockPulse",
+        sourceUrl:   a.source_url  || "",
+        publishedAt: a.published_at,
+        price:       price?.price  ?? null,
+        change:      price?.change ?? null,
       };
     });
   } catch {
@@ -78,21 +77,20 @@ async function fetchGlobalNews(priceMap) {
 }
 
 export default function HomePage({ activeFilter, activeStock, onTrack, trackedSymbols, onGoGlobal, onSwitchToStock }) {
-  const [allNews,       setAllNews]      = useState([]);
-  const [visibleCount,  setVisibleCount] = useState(PAGE_SIZE);
-  const [loading,       setLoading]      = useState(false);
-  const [stockInfo,     setStockInfo]    = useState(null);
-  const [newCount,      setNewCount]     = useState(0);
-  const [fetchingNews,  setFetchingNews] = useState(false);
-  const [pendingNews,   setPendingNews]  = useState([]);
+  const [allNews,      setAllNews]      = useState([]);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loading,      setLoading]      = useState(false);
+  const [stockInfo,    setStockInfo]    = useState(null);
+  const [newCount,     setNewCount]     = useState(0);
+  const [fetchingNews, setFetchingNews] = useState(false);
+  const [pendingNews,  setPendingNews]  = useState([]);
   const [inlineCompany, setInlineCompany] = useState(null);
-  const [sentimentFilter, setSentimentFilter] = useState("all");
   const loaderRef    = useRef();
   const feedRef      = useRef();
   const loadingRef   = useRef(false);
   const latestIdRef  = useRef(null);
-  const pollTimerRef = useRef(null);
-  const stockPollRef = useRef(null);
+  const pollTimerRef  = useRef(null);
+  const stockPollRef  = useRef(null);
 
   useEffect(() => {
     window.__openDashboard   = (sym, company) => setInlineCompany({ symbol: sym, company });
@@ -105,7 +103,9 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
     };
   }, [inlineCompany]);
 
-  useEffect(() => { setInlineCompany(null); }, [activeFilter]);
+  useEffect(() => {
+    setInlineCompany(null);
+  }, [activeFilter]);
 
   useEffect(() => {
     if (loadingRef.current) return;
@@ -116,7 +116,6 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
     setStockInfo(null);
     setFetchingNews(false);
     setLoading(true);
-    setSentimentFilter("all");
 
     (async () => {
       try {
@@ -151,8 +150,8 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
             return true;
           }).map(a => ({
             ...a,
-            price:  a.price  ?? stock?.price     ?? null,
-            change: a.change ?? stock?.change_pct ?? null,
+            price:  a.price  ?? stock?.price      ?? null,
+            change: a.change ?? stock?.change_pct  ?? null,
           }));
         }
 
@@ -190,20 +189,13 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
               setFetchingNews(false);
               const priceMap = await fetchPriceMap();
               const mapArt = a => ({
-                id:           a.id,
-                symbol:       sym,
-                company:      a.company      || sym,
-                headline:     a.headline,
-                summary:      a.summary_20   || a.headline,
-                summary_long: a.summary_long || null,
-                sentiment:    a.sentiment    || "neutral",
-                image:        a.image_url    || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80",
-                source:       a.source       || "StockPulse",
-                sourceUrl:    a.source_url   || "",
-                publishedAt:  a.published_at,
-                fullText:     a.full_text    || null,
-                price:        priceMap[sym]?.price  ?? null,
-                change:       priceMap[sym]?.change ?? null,
+                id: a.id, symbol: sym, company: a.company || sym,
+                headline: a.headline, summary: a.summary_20 || a.headline,
+                sentiment: a.sentiment || "neutral",
+                image: a.image_url || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&q=80",
+                source: a.source || "StockPulse", sourceUrl: a.source_url || "",
+                publishedAt: a.published_at, fullText: a.full_text || null,
+                price: priceMap[sym]?.price ?? null, change: priceMap[sym]?.change ?? null,
               });
               const seenH    = new Set();
               const allFresh = d.data.map(mapArt).filter(a => {
@@ -213,9 +205,9 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
               });
               const maxId = allFresh.length ? Math.max(...allFresh.map(a => Number(a.id)||0)) : 0;
               setAllNews(prev => {
-                const existIds = new Set(prev.map(x => x.id));
-                const existH   = new Set(prev.map(x => x.headline.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60)));
-                const brandNew = allFresh.filter(a => {
+                const existIds  = new Set(prev.map(x => x.id));
+                const existH    = new Set(prev.map(x => x.headline.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60)));
+                const brandNew  = allFresh.filter(a => {
                   if (existIds.has(a.id)) return false;
                   const hk = a.headline.toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,60);
                   return !existH.has(hk);
@@ -243,15 +235,17 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
         const priceMap = await fetchPriceMap();
         const fresh = await fetchGlobalNews(priceMap);
         if (!fresh.length) return;
+
         const currentLatest = latestIdRef.current;
         const brandNew = fresh.filter(a => {
           if (currentLatest === null) return false;
           return Number(a.id) > Number(currentLatest);
         });
+
         if (brandNew.length > 0) {
           setPendingNews(prev => {
             const existingIds = new Set(prev.map(x => x.id));
-            const toAdd  = brandNew.filter(a => !existingIds.has(a.id));
+            const toAdd = brandNew.filter(a => !existingIds.has(a.id));
             const merged = [...toAdd, ...prev];
             setNewCount(merged.length);
             return merged;
@@ -268,12 +262,12 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisibleCount(v => Math.min(v + PAGE_SIZE, filteredNews.length)); },
+      ([entry]) => { if (entry.isIntersecting) setVisibleCount(v => Math.min(v + PAGE_SIZE, allNews.length)); },
       { threshold: 0.1 }
     );
     if (loaderRef.current) observer.observe(loaderRef.current);
     return () => observer.disconnect();
-  }, [allNews, sentimentFilter]);
+  }, [allNews]);
 
   function showNewArticles() {
     if (!pendingNews.length) return;
@@ -291,11 +285,8 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
     if (feedRef.current) feedRef.current.scrollTop = 0;
   }
 
-  const filteredNews = sentimentFilter === "all"
-    ? allNews
-    : allNews.filter(a => a.sentiment === sentimentFilter);
-  const visibleNews = filteredNews.slice(0, visibleCount);
-  const hasMore     = visibleCount < filteredNews.length;
+  const visibleNews = allNews.slice(0, visibleCount);
+  const hasMore     = visibleCount < allNews.length;
   const isCat       = activeFilter.startsWith("cat:");
   const isStock     = !isCat && activeFilter !== "global";
   const stock       = isStock ? (stockInfo || STOCKS.find(s => s.symbol === activeFilter)) : null;
@@ -324,39 +315,77 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
       {!inlineCompany && !isCat && (<>
 
         {fetchingNews && allNews.length > 0 && (
-          <div style={{ position: "sticky", top: 0, zIndex: 99, height: 3, background: "var(--border)", borderRadius: 2, overflow: "hidden", marginBottom: 8 }}>
-            <div style={{ height: "100%", width: "40%", background: "var(--accent)", borderRadius: 2, animation: "loadingSlide 1.2s ease-in-out infinite" }} />
+          <div style={{
+            position: "sticky", top: 0, zIndex: 99,
+            height: 3, background: "var(--border)",
+            borderRadius: 2, overflow: "hidden", marginBottom: 8,
+          }}>
+            <div style={{
+              height: "100%", width: "40%",
+              background: "var(--accent)",
+              borderRadius: 2,
+              animation: "loadingSlide 1.2s ease-in-out infinite",
+            }} />
           </div>
         )}
 
         {newCount > 0 && (
           <div
             onClick={showNewArticles}
-            style={{ position: "sticky", top: 8, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#ffffff", color: "#000000", borderRadius: 24, padding: "10px 20px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,0.12)", border: "1px solid var(--border2)", margin: "0 auto 12px", width: "fit-content", animation: "slideDown 0.3s ease" }}
+            style={{
+              position: "sticky", top: 8, zIndex: 100,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              background: "#ffffff", color: "#000000",
+              borderRadius: 24, padding: "10px 20px",
+              fontWeight: 700, fontSize: 13, cursor: "pointer",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              border: "1px solid var(--border2)",
+              margin: "0 auto 12px", width: "fit-content",
+              animation: "slideDown 0.3s ease",
+            }}
           >
             <span style={{ fontSize: 16 }}>🔔</span>
             {newCount} new article{newCount > 1 ? "s" : ""} – tap to load
           </div>
         )}
 
-        {/* Sticky header */}
-        <div style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--bg)", paddingTop: 4, paddingBottom: 12, marginBottom: 4, borderBottom: "1px solid var(--border)" }}>
+        <div style={{
+          position: "sticky", top: 0, zIndex: 10,
+          background: "var(--bg)",
+          paddingTop: 4, paddingBottom: 12,
+          marginBottom: 4,
+          borderBottom: "1px solid var(--border)",
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
               {(activeFilter !== "global") && (
                 <button
                   onClick={() => onGoGlobal && onGoGlobal()}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--text3)", fontSize: 18, padding: "0 4px 0 0", lineHeight: 1, display: "flex", alignItems: "center", fontWeight: 300 }}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    color: "var(--text3)", fontSize: 18, padding: "0 4px 0 0",
+                    lineHeight: 1, display: "flex", alignItems: "center",
+                    fontWeight: 300,
+                  }}
                   title="Back to Global Feed"
                 >←</button>
               )}
-              <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17, color: "var(--text)" }}>
+              <div style={{
+                fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 17,
+                color: "var(--text)",
+              }}>
                 {activeFilter === "global" ? "Global Feed" : stockName}
               </div>
             </div>
 
             {isStock && stock && price != null && (
-              <div style={{ padding: "3px 10px", borderRadius: 20, flexShrink: 0, background: changePct >= 0 ? "rgba(0,212,170,0.12)" : "rgba(255,77,109,0.12)", border: `1px solid ${changePct >= 0 ? "var(--bull)" : "var(--bear)"}`, fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display)", color: changePct >= 0 ? "var(--bull)" : "var(--bear)" }}>
+              <div style={{
+                padding: "3px 10px", borderRadius: 20, flexShrink: 0,
+                background: changePct >= 0 ? "rgba(0,212,170,0.12)" : "rgba(255,77,109,0.12)",
+                border: `1px solid ${changePct >= 0 ? "var(--bull)" : "var(--bear)"}`,
+                fontSize: 12, fontWeight: 700, fontFamily: "var(--font-display)",
+                color: changePct >= 0 ? "var(--bull)" : "var(--bear)",
+              }}>
                 {"₹"}{price?.toLocaleString("en-IN", {maximumFractionDigits:2})} &nbsp;
                 {changePct >= 0 ? "▲" : "▼"} {Math.abs(changePct || 0).toFixed(2)}%
               </div>
@@ -368,59 +397,42 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 <button
                   onClick={() => onTrack && onTrack(stock || { symbol: activeFilter, name: stockName })}
-                  style={{ padding: "6px 14px", borderRadius: 8, cursor: "pointer", background: trackedSymbols.includes(activeFilter) ? "#e8e8e8" : "transparent", border: "1px solid var(--border2)", fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, color: trackedSymbols.includes(activeFilter) ? "#555" : "var(--text2)", transition: "all 0.15s" }}
+                  style={{
+                    padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                    background: trackedSymbols.includes(activeFilter) ? "#e8e8e8" : "transparent",
+                    border: "1px solid var(--border2)",
+                    fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700,
+                    color: trackedSymbols.includes(activeFilter) ? "#555" : "var(--text2)",
+                    transition: "all 0.15s",
+                  }}
                 >
                   {trackedSymbols.includes(activeFilter) ? "Watchlisted ✓" : "+ Add to Watchlist"}
                 </button>
                 <button
-                  onClick={() => { window.__openDashboard && window.__openDashboard(activeFilter, stockName); }}
-                  style={{ padding: "6px 14px", borderRadius: 8, cursor: "pointer", background: "var(--text)", border: "1px solid var(--text)", fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700, color: "var(--bg)", transition: "all 0.15s" }}
+                  onClick={() => {
+                    window.__openDashboard && window.__openDashboard(activeFilter, stockName);
+                  }}
+                  style={{
+                    padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                    background: "var(--text)", border: "1px solid var(--text)",
+                    fontFamily: "var(--font-display)", fontSize: 11, fontWeight: 700,
+                    color: "var(--bg)", transition: "all 0.15s",
+                  }}
                 >
                   Dashboard
                 </button>
               </div>
             )}
           </div>
-
-          {/* Sentiment filter tabs */}
-          {!loading && allNews.length > 0 && (
-            <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-              {[
-                { key: "all",     label: "All",        color: null },
-                { key: "bullish", label: "▲ Bullish",  color: "#16a34a", bg: "rgba(22,163,74,0.10)",   border: "rgba(22,163,74,0.35)"  },
-                { key: "bearish", label: "▼ Bearish",  color: "#dc2626", bg: "rgba(220,38,38,0.10)",   border: "rgba(220,38,38,0.35)"  },
-                { key: "neutral", label: "◆ Neutral",  color: "#6b7280", bg: "rgba(107,114,128,0.10)", border: "rgba(107,114,128,0.30)" },
-              ].map(tab => {
-                const active = sentimentFilter === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => { setSentimentFilter(tab.key); setVisibleCount(PAGE_SIZE); }}
-                    style={{
-                      padding: "5px 13px", borderRadius: 20, cursor: "pointer",
-                      fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 700,
-                      letterSpacing: "0.02em", transition: "all 0.15s",
-                      border: active ? `1.5px solid ${tab.border || "var(--text)"}` : "1.5px solid var(--border2)",
-                      background: active ? (tab.bg || "var(--text)") : "transparent",
-                      color: active ? (tab.color || "var(--bg)") : "var(--text3)",
-                    }}
-                  >
-                    {tab.label}
-                    {tab.key !== "all" && (
-                      <span style={{ marginLeft: 5, opacity: 0.7, fontWeight: 500 }}>
-                        {allNews.filter(a => a.sentiment === tab.key).length}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {loading && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "60px 0", gap: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", border: "3px solid var(--border2)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%",
+              border: "3px solid var(--border2)", borderTopColor: "var(--accent)",
+              animation: "spin 0.8s linear infinite"
+            }} />
             <div style={{ color: "var(--text3)", fontFamily: "var(--font-display)", fontSize: 13 }}>
               Loading {activeFilter === "global" ? "global feed" : stockName}...
             </div>
@@ -452,14 +464,19 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
                 </div>
                 <div style={{ marginTop: 16, display: "flex", justifyContent: "center", gap: 6 }}>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent)", animation: `pulse 1s ${i * 0.2}s infinite` }} />
+                    <div key={i} style={{
+                      width: 8, height: 8, borderRadius: "50%", background: "var(--accent)",
+                      animation: `pulse 1s ${i * 0.2}s infinite`,
+                    }} />
                   ))}
                 </div>
               </>
             ) : (
               <>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>📭</div>
-                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>No real news found yet</div>
+                <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
+                  No real news found yet
+                </div>
                 <div style={{ fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: "0 auto" }}>
                   {activeFilter === "global"
                     ? "The agents are fetching live market news. Check back in a few minutes."
@@ -470,19 +487,17 @@ export default function HomePage({ activeFilter, activeStock, onTrack, trackedSy
           </div>
         )}
 
-        {!loading && filteredNews.length === 0 && allNews.length > 0 && (
-          <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text3)", fontFamily: "var(--font-display)", fontSize: 13 }}>
-            No {sentimentFilter} articles found.
-          </div>
-        )}
-
-        {!loading && filteredNews.length > 0 && (
+        {!loading && allNews.length > 0 && (
           <div ref={loaderRef} style={{ padding: 24, display: "flex", justifyContent: "center" }}>
             {hasMore ? (
-              <div style={{ width: 28, height: 28, borderRadius: "50%", border: "3px solid var(--border2)", borderTopColor: "var(--accent)", animation: "spin 0.8s linear infinite" }} />
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%",
+                border: "3px solid var(--border2)", borderTopColor: "var(--accent)",
+                animation: "spin 0.8s linear infinite"
+              }} />
             ) : (
               <div style={{ color: "var(--text3)", fontSize: 12, fontFamily: "var(--font-display)" }}>
-                — {filteredNews.length} articles —
+                — {allNews.length} articles —
               </div>
             )}
           </div>

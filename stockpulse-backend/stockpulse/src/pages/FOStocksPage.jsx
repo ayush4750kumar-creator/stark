@@ -214,15 +214,8 @@ export default function FOStocksPage() {
     try { return JSON.parse(localStorage.getItem("fo_watchlist") || "[]"); } catch { return []; }
   });
   const [activeDash, setActiveDash] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
 
   const didFetch    = useRef(false);
-
-  useEffect(() => {
-    const h = () => setIsMobile(window.innerWidth < 900);
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
   const searchRef   = useRef();
   const searchTimer = useRef();
 
@@ -372,7 +365,7 @@ export default function FOStocksPage() {
       `}</style>
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────── */}
-      {!isMobile && <div style={{ width:224,flexShrink:0,borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
+      <div style={{ width:224,flexShrink:0,borderRight:"1px solid var(--border)",display:"flex",flexDirection:"column",background:"var(--bg)" }}>
 
         <div style={{ padding:"14px 14px 8px",borderBottom:"1px solid var(--border)",flexShrink:0 }}>
           <div style={{ fontFamily:"var(--font-display)",fontWeight:800,fontSize:11,color:"var(--text3)",letterSpacing:"0.1em" }}>F&O WATCHLIST</div>
@@ -461,9 +454,8 @@ export default function FOStocksPage() {
             <span style={{ marginLeft:"auto" }}>{(foList.length || FO_LIST.length)} stocks</span>
           </div>
         </div>
-      </div>}
+      </div>
 
-      )}
       {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
       <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0 }}>
 

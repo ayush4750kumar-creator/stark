@@ -21,12 +21,12 @@ const BACKEND       = process.env.REACT_APP_API_URL;
 const PRICE_REFRESH = 30 * 1000;
 
 // ── Gramble brand palette ──────────────────────────────────────────────────
-const GB   = "#6AAFE6";
-const GB2  = "#5BA3DD";
-const GBBG = "#EAF4FC";
+const GB   = "#6AAFE6";   // gramble sky-blue (.in colour) — matched from logo
+const GB2  = "#5BA3DD";   // slightly deeper – borders / hover
+const GBBG = "#EAF4FC";   // very light tint – selected backgrounds
 // ──────────────────────────────────────────────────────────────────────────
 
-const DEFAULT_SYMBOLS = [];
+const DEFAULT_SYMBOLS = ["RELIANCE", "TCS", "INFY", "SBIN", "AAPL", "TSLA"];
 
 // ── Outfit + Inter font injection ─────────────────────────────────────────
 function FontInjector() {
@@ -35,6 +35,7 @@ function FontInjector() {
     const link = document.createElement("link");
     link.id   = "gramble-font";
     link.rel  = "stylesheet";
+    // Load both Outfit and Inter Black for the logo
     link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap";
     document.head.appendChild(link);
     const style = document.createElement("style");
@@ -54,10 +55,19 @@ function FontInjector() {
   return null;
 }
 
+// ── gramble.in Logo ────────────────────────────────────────────────────────
+// Matches the uploaded brand mark exactly:
+//   • "gramble" — near-black (#111), ultra-heavy weight, rounded/wide letterforms
+//   • "."       — sky-blue, same weight, circular dot (the period in ".in")
+//   • "in"      — sky-blue, same ultra-heavy weight
+//   • No gap between "gramble" and ".in" — the dot sits flush
+//   • letterSpacing slightly tight (like the logo)
+// The `size` prop scales everything proportionally.
 function GrambleLogo({ size = 28 }) {
   return (
     <span
       style={{
+        // Inter Black is the closest Google Font match to the logo's rounded heavy sans
         fontFamily: "'Inter', 'Outfit', system-ui, sans-serif",
         fontWeight: 900,
         fontSize: size,
@@ -70,6 +80,7 @@ function GrambleLogo({ size = 28 }) {
       }}
     >
       <span style={{ color: "#111" }}>gramble</span>
+      {/* The dot is part of ".in" — rendered in sky-blue, no extra spacing */}
       <span style={{ color: GB }}>.</span>
       <span style={{ color: GB }}>in</span>
     </span>
@@ -77,67 +88,84 @@ function GrambleLogo({ size = 28 }) {
 }
 
 // ── Collapsible search bar ────────────────────────────────────────────────
-function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar onAddTracked={onAddTracked} onSelectStock={onSelectStock} />; }
+function CollapsibleSearch({ onAddTracked, onSelectStock }) { return <SearchBar onAddTracked={onAddTracked} onSelectStock={onSelectStock} />; } function CollapsibleSearch_OLD({ onAddTracked, onSelectStock }) {
+  const [expanded, setExpanded] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setExpanded(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={wrapRef} style={{ display: "flex", alignItems: "center", position: "relative" }}>
+      <button
+        onClick={() => setExpanded(v => !v)}
+        style={{
+          width: 34, height: 34, borderRadius: 9,
+          border: `1.5px solid ${expanded ? GB : "var(--border2)"}`,
+          background: expanded ? GBBG : "transparent",
+          color: expanded ? GB2 : "var(--text3)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", transition: "all 0.2s", flexShrink: 0,
+        }}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <div style={{
+        overflow: "hidden",
+        maxWidth: expanded ? 280 : 0,
+        opacity: expanded ? 1 : 0,
+        transition: "max-width 0.25s ease, opacity 0.2s ease",
+        marginLeft: expanded ? 8 : 0,
+      }}>
+        <div style={{ width: 280 }}>
+          <SearchBar
+            onAddTracked={onAddTracked}
+            onSelectStock={(s) => { onSelectStock(s); setExpanded(false); }}
+            autoFocus={expanded}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Inline auth modal ─────────────────────────────────────────────────────
 function AuthModal({ onLogin, onClose }) {
-  const [mode, setMode]             = useState("signup");
-  const [step, setStep]             = useState("form");
-  const [name, setName]             = useState("");
-  const [email, setEmail]           = useState("");
-  const [password, setPassword]     = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [otp, setOtp]               = useState("");
-  const [error, setError]           = useState("");
-  const [loading, setLoading]       = useState(false);
+  const [mode, setMode]         = useState("signup");
+  const [name, setName]         = useState("");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
 
   const API = (process.env.REACT_APP_API_URL || "https://stark-production-4b5e.up.railway.app/api") + "/auth";
 
   const submit = async () => {
     setError(""); setLoading(true);
     try {
-      if (mode === "signup") {
-        if (!name || !email || !password || !confirmPass)
-          return setError("All fields are required.");
-        if (password !== confirmPass)
-          return setError("Passwords do not match.");
-        if (password.length < 6)
-          return setError("Password must be at least 6 characters.");
-        const res  = await fetch(`${API}/signup`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-        const data = await res.json();
-        if (data.success) { setStep("otp"); }
-        else setError(data.error || "Something went wrong.");
-      } else {
-        const res  = await fetch(`${API}/login`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          localStorage.setItem("sp_token", data.token || "");
-          onLogin({ ...data.user, token: data.token });
-        } else setError(data.error || "Something went wrong.");
-      }
-    } catch { setError("Network error. Please try again."); }
-    setLoading(false);
-  };
-
-  const verifyOtp = async () => {
-    setError(""); setLoading(true);
-    try {
-      const res  = await fetch(`${API}/verify-otp`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+      const body = mode === "signup" ? { name, email, password } : { email, password };
+      const res  = await fetch(`${API}/${mode === "signup" ? "signup" : "login"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem("sp_token", data.token || "");
-        onLogin({ ...data.user, token: data.token });
-      } else setError(data.error || "Invalid code.");
-    } catch { setError("Network error. Please try again."); }
+        localStorage.setItem("sp_token", data.token || data.user?.token || "");
+        onLogin({ ...data.user, token: data.token || data.user?.token });
+      } else {
+        setError(data.message || "Something went wrong.");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    }
     setLoading(false);
   };
 
@@ -149,220 +177,124 @@ function AuthModal({ onLogin, onClose }) {
     transition: "border-color 0.15s", background: "#fff",
   };
 
-  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); setConfirmPass(""); setStep("form"); };
+  const switchMode = (m) => { setMode(m); setError(""); setName(""); setEmail(""); setPassword(""); };
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 360, borderRadius: 18, background: "#fff", border: `2px solid ${GB}`, boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: 360, height: 360,
+          borderRadius: 18, background: "#fff",
+          border: `2px solid ${GB}`,
+          boxShadow: `0 12px 48px rgba(106,175,230,0.22), 0 2px 12px rgba(0,0,0,0.08)`,
+          display: "flex", flexDirection: "column",
+          overflow: "hidden", position: "relative",
+        }}
+      >
         <div style={{ height: 4, background: `linear-gradient(90deg, ${GB}, ${GB2})`, flexShrink: 0 }} />
-        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, width: 24, height: 24, borderRadius: "50%", background: GBBG, border: `1px solid ${GB}`, cursor: "pointer", fontSize: 11, color: GB2, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 }}>✕</button>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: "14px 24px 18px", gap: 9 }}>
+        <button onClick={onClose} style={{
+          position: "absolute", top: 12, right: 12,
+          width: 24, height: 24, borderRadius: "50%",
+          background: GBBG, border: `1px solid ${GB}`,
+          cursor: "pointer", fontSize: 11, color: GB2,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 700,
+        }}>✕</button>
+
+        <div style={{
+          flex: 1, display: "flex", flexDirection: "column",
+          padding: "14px 24px 18px", gap: 9,
+        }}>
           <div style={{ textAlign: "center" }}>
             <GrambleLogo size={22} />
             <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Outfit', sans-serif", fontWeight: 500, marginTop: 3 }}>
-              {step === "otp" ? "Check your email" : mode === "signup" ? "Create your account" : "Welcome back"}
+              {mode === "signup" ? "Create your account" : "Welcome back"}
             </div>
           </div>
-          {step === "otp" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              <div style={{ fontSize: 12, color: "#64748b", fontFamily: "'Outfit', sans-serif", textAlign: "center" }}>
-                We sent a 6-digit code to <strong>{email}</strong>
-              </div>
-              <input placeholder="Enter 6-digit code" value={otp} onChange={e => setOtp(e.target.value)} onKeyDown={e => e.key === "Enter" && verifyOtp()} maxLength={6}
-                style={{ ...inputStyle, textAlign: "center", fontSize: 22, letterSpacing: 8, fontWeight: 700 }}
-                onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
-              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
-              <button onClick={verifyOtp} disabled={loading} style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5 }}>
-                {loading ? "Verifying…" : "Verify & Sign In"}
-              </button>
-              <div style={{ textAlign: "center" }}>
-                <span onClick={() => { setStep("form"); setOtp(""); setError(""); }} style={{ fontSize: 12, color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "'Outfit', sans-serif" }}>← Back</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                {mode === "signup" && (
-                  <input placeholder="Full name" value={name} onChange={e => setName(e.target.value)} style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
-                )}
-                <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"} />
-                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle}
-                  onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                  onKeyDown={e => e.key === "Enter" && mode === "login" && submit()} />
-                {mode === "signup" && (
-                  <input type="password" placeholder="Confirm password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = GB} onBlur={e => e.target.style.borderColor = "#e2e8f0"}
-                    onKeyDown={e => e.key === "Enter" && submit()} />
-                )}
-              </div>
-              {error && <div style={{ fontSize: 11, color: "#e53e3e", fontFamily: "'Outfit', sans-serif", fontWeight: 500, background: "#fff5f5", padding: "5px 10px", borderRadius: 6 }}>{error}</div>}
-              <button onClick={submit} disabled={loading}
-                style={{ padding: "10px", borderRadius: 9, border: "none", background: loading ? GB2 : GB, color: "#fff", cursor: loading ? "not-allowed" : "pointer", fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5, transition: "background 0.15s" }}
-                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
-                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}>
-                {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
-              </button>
-              <div style={{ textAlign: "center" }}>
-                {mode === "signup" ? (
-                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                    Already have an account?{" "}
-                    <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Log in</span>
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
-                    New here?{" "}
-                    <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>Create a new account</span>
-                  </span>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-// ── Mobile Profile Menu ───────────────────────────────────────────────────
-function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef(null);
-  React.useEffect(() => {
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
-  const NAV_ITEMS = [
-    { label: "World Markets", icon: "🌍", sub: [
-      { label: "Trending Today", id: "trending" },
-      { label: "Top Gainers",    id: "gainers"  },
-      { label: "Top Losers",     id: "losers"   },
-      { label: "Indian Index",   id: "indices"  },
-      { label: "Gold",           id: "gold"     },
-      { label: "Silver",         id: "silver"   },
-      { label: "Top Indian Tech",id: "tech"     },
-      { label: "Oil",            id: "oil"      },
-      { label: "Finance / Banks",id: "finance"  },
-      { label: "US Market",      id: "us"       },
-    ]},
-    { label: "F&O Stocks",          icon: "📊", path: "/fo/stocks"         },
-    { label: "Commodities",         icon: "🪙", path: "/fo/commodities"    },
-    { label: "Intraday Screener",   icon: "⚡", path: "/screener/intraday" },
-    { label: "ETF Screener",        icon: "📈", path: "/screener/etf"      },
-    { label: "Indices Screener",    icon: "🗂", path: "/screener/indices"  },
-    { label: "Mutual Funds",        icon: "🔍", path: "/mf/screener"       },
-    { label: "Compare MFs",         icon: "⚖️", path: "/mf/compare"        },
-    { label: "IPO",                 icon: "🚀", path: "/more/ipo"          },
-    { label: "Global ETFs",         icon: "🌐", path: "/more/etfs"         },
-    { label: "Bonds",               icon: "📜", path: "/more/bonds"        },
-    { label: "Crypto",              icon: "₿",  path: "/more/crypto"       },
-  ];
-  const [marketsOpen, setMarketsOpen] = React.useState(false);
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <div
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: 32, height: 32, borderRadius: 9,
-          background: `linear-gradient(135deg, ${GB}, ${GB2})`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontFamily: "'Outfit', sans-serif", fontWeight: 800,
-          color: "#fff", fontSize: 12, flexShrink: 0, cursor: "pointer",
-        }}
-      >
-        {user.initials}
-      </div>
-      {open && (
-        <div style={{
-          position: "fixed", top: 60, right: 10, left: 10, zIndex: 9999,
-          background: "var(--bg)", border: "1px solid var(--border2)",
-          borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
-          overflow: "hidden", maxHeight: "80vh", overflowY: "auto",
-        }}>
-          {/* User info */}
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)", background: "var(--bg2)" }}>
-            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{user.name}</div>
-            <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{user.email}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            {mode === "signup" && (
+              <input
+                placeholder="Full name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = GB}
+                onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+              />
+            )}
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = GB}
+              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              style={inputStyle}
+              onFocus={e => e.target.style.borderColor = GB}
+              onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+            />
           </div>
-          {/* World Markets expandable */}
-          <div
-            onClick={() => setMarketsOpen(v => !v)}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 16px", cursor: "pointer",
-              borderBottom: marketsOpen ? "none" : "1px solid var(--border)",
-              background: marketsOpen ? "var(--bg2)" : "transparent",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 16 }}>🌍</span>
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>World Markets</span>
-            </div>
-            <span style={{ fontSize: 10, color: "var(--text3)", transform: marketsOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
-          </div>
-          {marketsOpen && (
-            <div style={{ borderBottom: "1px solid var(--border)" }}>
-              {NAV_ITEMS[0].sub.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => { onSelectCategory(item.id); setOpen(false); }}
-                  style={{
-                    padding: "10px 16px 10px 42px", cursor: "pointer",
-                    fontFamily: "'Outfit', sans-serif", fontSize: 12.5,
-                    color: "var(--text2)", fontWeight: 500,
-                    borderBottom: "1px solid var(--border)",
-                  }}
-                  onTouchStart={e => e.currentTarget.style.background = "var(--bg2)"}
-                  onTouchEnd={e => e.currentTarget.style.background = "transparent"}
-                >
-                  {item.label}
-                </div>
-              ))}
-            </div>
+
+          {error && (
+            <div style={{
+              fontSize: 11, color: "#e53e3e",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 500,
+              background: "#fff5f5", padding: "5px 10px", borderRadius: 6,
+            }}>{error}</div>
           )}
-          {/* Other nav items */}
-          {NAV_ITEMS.slice(1).map((item) => (
-            <div
-              key={item.label}
-              onClick={() => {
-                if (window.__setOverlay) window.__setOverlay(item.path);
-                setOpen(false);
-              }}
-              style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "12px 16px", cursor: "pointer",
-                borderBottom: "1px solid var(--border)",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600,
-                fontSize: 13, color: "var(--text2)",
-              }}
-              onTouchStart={e => e.currentTarget.style.background = "var(--bg2)"}
-              onTouchEnd={e => e.currentTarget.style.background = "transparent"}
-            >
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              {item.label}
-            </div>
-          ))}
-          {/* Logout */}
-          <div
-            onClick={() => { onLogout(); setOpen(false); }}
+
+          <button
+            onClick={submit}
+            disabled={loading}
             style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 16px", cursor: "pointer",
-              fontFamily: "'Outfit', sans-serif", fontWeight: 600,
-              fontSize: 13, color: "#e53e3e",
+              padding: "10px", borderRadius: 9, border: "none",
+              background: loading ? GB2 : GB, color: "#fff",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13.5,
+              transition: "background 0.15s",
             }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = GB2; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = GB; }}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Logout
+            {loading ? "Please wait…" : mode === "signup" ? "Sign Up" : "Log In"}
+          </button>
+
+          <div style={{ textAlign: "center" }}>
+            {mode === "signup" ? (
+              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                Already have an account?{" "}
+                <span onClick={() => switchMode("login")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
+                  Log in
+                </span>
+              </span>
+            ) : (
+              <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Outfit', sans-serif" }}>
+                New here?{" "}
+                <span onClick={() => switchMode("signup")} style={{ color: GB, fontWeight: 700, cursor: "pointer", textDecoration: "underline" }}>
+                  Create a new account
+                </span>
+              </span>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -408,7 +340,7 @@ function Layout({ user, onLogin, onLogout }) {
 
   useEffect(() => {
     async function bootStocks() {
-      let symbolsToLoad = DEFAULT_SYMBOLS;
+      let symbolsToLoad = [];
       if (user?.token) {
         try {
           const res  = await fetch(`${BACKEND}/auth/watchlist`, { headers: { Authorization: `Bearer ${user.token}` } });
@@ -572,7 +504,7 @@ function Layout({ user, onLogin, onLogout }) {
         gap: isMobile ? 10 : 16,
       }}>
 
-        {/* ── LOGO ── */}
+        {/* ── LOGO — click to go home ── */}
         <div
           style={{ display: "flex", alignItems: "center", flexShrink: 0, cursor: "pointer" }}
           onClick={() => {
@@ -580,6 +512,10 @@ function Layout({ user, onLogin, onLogout }) {
             if (window.__isDashboardOpen && window.__isDashboardOpen()) window.__closeDashboard && window.__closeDashboard();
           }}
         >
+          {/*
+            Desktop: size=38 → big, prominent, matches brand mark proportions
+            Mobile:  size=28 → still readable, fits header
+          */}
           <GrambleLogo size={isMobile ? 28 : 38} />
         </div>
 
@@ -605,38 +541,37 @@ function Layout({ user, onLogin, onLogout }) {
 
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {isMobile ? (
-                <MobileProfileMenu
-                  user={user}
-                  onLogout={onLogout}
-                  GB={GB}
-                  GB2={GB2}
-                  onSelectCategory={(catId) => handleFilterChange("cat:" + catId)}
-                />
-              ) : (
-                <>
-                  <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
-                    {user.name}
-                  </span>
-                  <button onClick={onLogout} style={{
-                    display: "flex", alignItems: "center", gap: 5,
-                    padding: "6px 11px", borderRadius: 8, background: "transparent",
-                    border: "1px solid var(--border2)", color: "var(--text3)",
-                    cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
-                    transition: "all 0.2s",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#fc8181"; e.currentTarget.style.color = "#e53e3e"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                      <polyline points="16 17 21 12 16 7"/>
-                      <line x1="21" y1="12" x2="9" y2="12"/>
-                    </svg>
-                    Logout
-                  </button>
-                </>
+              <div style={{
+                width: 32, height: 32, borderRadius: 9,
+                background: `linear-gradient(135deg, ${GB}, ${GB2})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'Outfit', sans-serif", fontWeight: 800,
+                color: "#fff", fontSize: 12, flexShrink: 0,
+              }}>
+                {user.initials}
+              </div>
+              {!isMobile && (
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text2)" }}>
+                  {user.name}
+                </span>
               )}
+              <button onClick={onLogout} style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "6px 11px", borderRadius: 8, background: "transparent",
+                border: "1px solid var(--border2)", color: "var(--text3)",
+                cursor: "pointer", fontFamily: "'Outfit', sans-serif", fontSize: 12, fontWeight: 600,
+                transition: "all 0.2s",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#fc8181"; e.currentTarget.style.color = "#e53e3e"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border2)"; e.currentTarget.style.color = "var(--text3)"; }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                {!isMobile && "Logout"}
+              </button>
             </div>
           ) : (
             <button
