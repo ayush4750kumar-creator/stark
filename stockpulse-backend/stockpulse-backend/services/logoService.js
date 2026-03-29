@@ -1,19 +1,12 @@
 // services/logoService.js
-// Backend logo fetcher + cache.
-// Fetches from multiple sources, caches result in DB as base64 data URL.
-// Frontend calls GET /api/logos?symbols=TCS,INFY,... and gets back data URLs
-// that load instantly with zero CORS issues.
 
 const https  = require("https");
 const http   = require("http");
 const { getDB } = require("../config/database");
 
-// ── In-memory cache (symbol → dataUrl | null) ──────────────────────
 const memCache = {};
 
-// ── Company domain map for Clearbit ───────────────────────────────
 const DOMAIN_MAP = {
-  // Indian stocks
   RELIANCE:"ril.com", TCS:"tcs.com", INFY:"infosys.com",
   HDFCBANK:"hdfcbank.com", ICICIBANK:"icicibank.com", WIPRO:"wipro.com",
   BAJFINANCE:"bajajfinserv.in", SBIN:"sbi.co.in", TATAMOTORS:"tatamotors.com",
@@ -46,7 +39,7 @@ const DOMAIN_MAP = {
   COFORGE:"coforge.com", MPHASIS:"mphasis.com", HAPPSTMNDS:"happiestminds.com",
   DIXON:"dixoninfo.com", ASTRAL:"astralpipes.com", PAGEIND:"pageind.com",
   KALYANKJIL:"kalyanjewellers.com", JUBLFOOD:"dominos.co.in",
-  DELHIVERY:"delhivery.com", SWIGGY:"swiggy.com", POLYCAB:"polycab.com",
+  DELHIVERY:"delhivery.com", SWIGGY:"swiggy.com",
   CANBK:"canarabank.com", BANKBARODA:"bankofbaroda.in",
   UNIONBANK:"unionbankofindia.co.in", BANKINDIA:"bankofindia.co.in",
   PNB:"pnbindia.in", AUBANK:"aubank.in", RBLBANK:"rblbank.com",
@@ -56,8 +49,8 @@ const DOMAIN_MAP = {
   NMDC:"nmdc.co.in", SOLARINDS:"solarindustries.com", CGPOWER:"cgpower.com",
   WAAREEENER:"waaree.com", APLAPOLLO:"aplapollo.com",
   BDL:"bdl-india.in", PFC:"pfcindia.com", RECLTD:"recindia.nic.in",
-  IREDA:"ireda.gov.in", BHARATFORG:"bharatforge.com", SONACOMS:"sonacoms.com",
-  UNOMINDA:"unominda.com", TRENT:"trent.in", PRESTIGE:"prestigeconstructions.com",
+  BHARATFORG:"bharatforge.com", SONACOMS:"sonacoms.com",
+  TRENT:"trent.in", PRESTIGE:"prestigeconstructions.com",
   LODHA:"lodhagroup.com", OBEROIRLTY:"oberoirealty.com",
   PHOENIXLTD:"thephoenixmills.com", LICI:"licindia.in",
   GODREJCP:"godrejcp.com", MANKIND:"mankindpharma.com",
@@ -67,36 +60,31 @@ const DOMAIN_MAP = {
   HDFCAMC:"hdfcamc.com", CDSL:"cdslindia.com",
   NUVAMA:"nuvama.com", ABCAPITAL:"adityabirlacapital.com",
   MAZDOCK:"mazagondock.in", NATIONALUM:"nalcoindia.com",
-  BAJAJHLDNG:"bajajfinserv.in", TIINDIA:"tubeinvestments.in",
-  PIIND:"pi-ind.com", SYNGENE:"syngeneintl.com",
-  DALBHARAT:"dalmiabharat.com", SRF:"srf.com",
-  KAYNES:"kaynestech.com", PGEL:"pgelectroplast.com",
-  AMBER:"ambergroup.co.in", INDUSTOWER:"industowerslimited.com",
-  PATANJALI:"patanjaliayurved.net", JIOFIN:"jio.com",
-  PPLPHARMA:"piramal.com", SHREECEM:"shreecement.com",
+  TIINDIA:"tubeinvestments.in", PIIND:"pi-ind.com",
+  SYNGENE:"syngeneintl.com", DALBHARAT:"dalmiabharat.com", SRF:"srf.com",
+  KAYNES:"kaynestech.com", AMBER:"ambergroup.co.in",
+  INDUSTOWER:"industowerslimited.com", PATANJALI:"patanjaliayurved.net",
+  JIOFIN:"jio.com", SHREECEM:"shreecement.com",
   ICICIPRULI:"iciciprulife.com", ICICIGI:"icicilombard.com",
-  ICICIPRULI:"iciciprulife.com", MANAPPURAM:"muthootfinance.com",
   INDIANB:"indianbank.in", SBICARD:"sbicard.com",
-  GMRINFRA:"gmrgroup.in", COLPAL:"colgate.co.in",
-  PREMIERENE:"waaree.com", MCDOWELL:"unitedspirits.com",
-  HINDPETRO:"hindustanpetroleum.com",
+  GMRINFRA:"gmrgroup.in", MCDOWELL:"unitedspirits.com",
   // ETF AMCs
   GOLDBEES:"nipponindiaetf.com", NIFTYBEES:"nipponindiaetf.com",
   BANKBEES:"nipponindiaetf.com", JUNIORBEES:"nipponindiaetf.com",
   MID150BEES:"nipponindiaetf.com", SILVERETF:"nipponindiaetf.com",
-  HDFCGOLD:"hdfcfund.com", HDFCSILVER:"hdfcfund.com", HDFCNIFTY:"hdfcfund.com",
-  AXISGOLD:"axismf.com", AXISSILVER:"axismf.com", AXISNIFTY:"axismf.com",
-  GOLD1:"kotakmf.com", KOTAKSILVER:"kotakmf.com", NIFTY1:"kotakmf.com",
-  SBIGOLD:"sbimf.com", SBISILVRETF:"sbimf.com", SETFNIF50:"sbimf.com",
-  GOLDIETF:"icicipruamc.com", ICICISILVRETF:"icicipruamc.com", NIFTYIETF:"icicipruamc.com",
+  HDFCGOLD:"hdfcfund.com", HDFCSILVER:"hdfcfund.com",
+  AXISGOLD:"axismf.com", AXISSILVER:"axismf.com",
+  GOLD1:"kotakmf.com", KOTAKSILVER:"kotakmf.com",
+  SBIGOLD:"sbimf.com", SBISILVRETF:"sbimf.com",
+  GOLDIETF:"icicipruamc.com", ICICISILVRETF:"icicipruamc.com",
   BSLGOLDETF:"adityabirlacapital.com", BSLSILVETF:"adityabirlacapital.com",
   GOLDETF:"miraeassetmf.co.in", MIRAESILVER:"miraeassetmf.co.in",
-  GOLDCASE:"zerodha.com", SILVERIETF:"zerodha.com", NIFTYCASE:"zerodha.com",
+  GOLDCASE:"zerodha.com", SILVERIETF:"zerodha.com",
   AONEGOLD:"angelone.in", AONESILVER:"angelone.in",
   EGOLD:"edelweissmf.com", ESILVER:"edelweissmf.com",
   MOGOLD:"motilaloswalmf.com", MOSILVER:"motilaloswalmf.com",
-  GROWWGOLD:"groww.in", GROWWSLVR:"groww.in", GROWWNIFTY:"groww.in",
-  QGOLDHALF:"quantumamc.com", GOLDBETA:"utimf.com", BANKBETA:"utimf.com",
+  GROWWGOLD:"groww.in", GROWWSLVR:"groww.in",
+  QGOLDHALF:"quantumamc.com", GOLDBETA:"utimf.com",
   LICMFGOLD:"licmf.com",
   // US stocks
   AAPL:"apple.com", MSFT:"microsoft.com", NVDA:"nvidia.com",
@@ -111,8 +99,8 @@ const DOMAIN_MAP = {
   COIN:"coinbase.com", PLTR:"palantir.com", SNOW:"snowflake.com",
 };
 
-// ── Fetch a URL and return buffer ──────────────────────────────────
-function fetchBuffer(url, timeout = 8000) {
+// ── Fetch a URL → { buffer, contentType } ─────────────────────────
+function fetchBuffer(url, timeout = 7000) {
   return new Promise((resolve, reject) => {
     try {
       const mod    = url.startsWith("https") ? https : http;
@@ -133,9 +121,8 @@ function fetchBuffer(url, timeout = 8000) {
         }
         if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
         const ct = res.headers["content-type"] || "";
-        if (!ct.startsWith("image/") && !ct.includes("png") && !ct.includes("jpeg") && !ct.includes("svg") && !ct.includes("webp")) {
-          return reject(new Error(`Not an image: ${ct}`));
-        }
+        const isImage = ct.startsWith("image/") || ct.includes("png") || ct.includes("jpeg") || ct.includes("svg") || ct.includes("webp") || ct.includes("x-icon") || ct.includes("vnd.microsoft.icon");
+        if (!isImage) return reject(new Error(`Not an image: ${ct}`));
         const chunks = [];
         res.on("data", d => chunks.push(d));
         res.on("end",  () => resolve({ buffer: Buffer.concat(chunks), contentType: ct }));
@@ -148,76 +135,81 @@ function fetchBuffer(url, timeout = 8000) {
   });
 }
 
-// ── Ensure logo_cache table exists ────────────────────────────────
+// ── SQLite-compatible table setup ──────────────────────────────────
+// FIX: removed PostgreSQL-style EXTRACT syntax, use strftime for SQLite
 function ensureTable() {
   try {
     getDB().exec(`
       CREATE TABLE IF NOT EXISTS logo_cache (
         symbol   TEXT PRIMARY KEY,
         data_url TEXT,
-        fetched  INTEGER DEFAULT (EXTRACT(EPOCH FROM datetime('now'))::INTEGER)
+        fetched  INTEGER DEFAULT (strftime('%s','now'))
       )
     `);
   } catch {}
 }
 
-// ── Check DB cache ─────────────────────────────────────────────────
 function getFromDB(symbol) {
   try {
     const row = getDB().prepare("SELECT data_url FROM logo_cache WHERE symbol = ?").get(symbol);
-    return row !== undefined ? (row.data_url || null) : undefined; // undefined = not in DB
+    return row !== undefined ? (row.data_url || null) : undefined;
   } catch { return undefined; }
 }
 
-// ── Save to DB cache ───────────────────────────────────────────────
 function saveToDB(symbol, dataUrl) {
   try {
+    // FIX: SQLite-compatible upsert with strftime instead of EXTRACT
     getDB().prepare(`
-      INSERT INTO logo_cache(symbol, data_url) VALUES(?,?)
-      ON CONFLICT(symbol) DO UPDATE SET data_url=excluded.data_url, fetched=EXTRACT(EPOCH FROM datetime('now'))::INTEGER
+      INSERT INTO logo_cache(symbol, data_url, fetched) VALUES(?, ?, strftime('%s','now'))
+      ON CONFLICT(symbol) DO UPDATE SET data_url = excluded.data_url, fetched = strftime('%s','now')
     `).run(symbol, dataUrl || null);
-  } catch {}
+  } catch(e) {
+    console.error("saveToDB error:", e.message);
+  }
 }
 
-// ── Build candidate URLs for a symbol ─────────────────────────────
+// ── Build candidate logo URLs for a symbol ─────────────────────────
 function getCandidates(symbol) {
-  const clean = symbol.replace(/\.(NS|BO|L|T|HK|AX)$/i, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  const clean  = symbol.replace(/\.(NS|BO|L|T|HK|AX)$/i, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
   const domain = DOMAIN_MAP[clean];
-  const urls = [];
+  const urls   = [];
 
-  // 1. Clearbit — best quality logos
+  // 1. Clearbit — best quality, PNG logos
   if (domain) {
-    urls.push(`https://logo.clearbit.com/${domain}`);
+    urls.push(`https://logo.clearbit.com/${domain}?size=128`);
   }
 
-  // 2. Screener.in static CDN — very reliable for Indian stocks
-  urls.push(`https://www.screener.in/static/company-logos/${clean}.png`);
-
-  // 3. Yahoo Finance company logo endpoint
-  urls.push(`https://yfapi.net/v6/finance/recommendationsbysymbol/${encodeURIComponent(symbol)}`);
-
-  // 4. Google favicons (reliable, always returns something)
+  // 2. Logo.dev — excellent alternative to Clearbit
   if (domain) {
-    urls.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=128`);
+    urls.push(`https://img.logo.dev/${domain}?token=pk_public&size=128`);
   }
-  urls.push(`https://www.google.com/s2/favicons?domain=${clean.toLowerCase()}.com&sz=128`);
 
-  // 5. Try .in domain for Indian stocks
-  if (!domain && symbol.endsWith(".NS")) {
-    urls.push(`https://www.google.com/s2/favicons?domain=${clean.toLowerCase()}.in&sz=128`);
+  // 3. Brandfetch CDN — good coverage
+  if (domain) {
+    urls.push(`https://cdn.brandfetch.io/${domain}/w/128/h/128`);
+  }
+
+  // 4. Google favicons — reliable fallback, always returns SOMETHING
+  //    FIX: removed the 500-byte filter that was blocking these
+  if (domain) {
+    urls.push(`https://www.google.com/s2/favicons?domain=${domain}&sz=64`);
+  }
+
+  // 5. Try .in domain for Indian stocks as last resort
+  if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) {
+    urls.push(`https://www.google.com/s2/favicons?domain=${clean.toLowerCase()}.in&sz=64`);
+    urls.push(`https://www.google.com/s2/favicons?domain=${clean.toLowerCase()}.com&sz=64`);
   }
 
   return urls;
 }
 
-// ── Fetch logo for one symbol — try each source until one works ────
+// ── Fetch logo for one symbol ─────────────────────────────────────
 async function fetchLogoForSymbol(symbol) {
   const clean = symbol.replace(/\.(NS|BO|L|T|HK|AX)$/i, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 
-  // Check memory cache
   if (memCache[clean] !== undefined) return memCache[clean];
 
-  // Check DB cache
   ensureTable();
   const cached = getFromDB(clean);
   if (cached !== undefined) {
@@ -225,53 +217,55 @@ async function fetchLogoForSymbol(symbol) {
     return cached;
   }
 
-  // Fetch from sources
   const candidates = getCandidates(symbol);
   for (const url of candidates) {
     try {
       const { buffer, contentType } = await fetchBuffer(url, 6000);
-      if (!buffer || buffer.length < 100) continue; // too small, probably error page
 
-      // Check it's not a tiny 1x1 tracking pixel (Google favicons sometimes return these)
-      if (buffer.length < 500 && !url.includes("clearbit") && !url.includes("screener")) continue;
+      // FIX: lowered minimum size to 100 bytes — Google favicons are small but valid
+      // Only skip truly empty responses (< 50 bytes = error HTML or empty body)
+      if (!buffer || buffer.length < 50) continue;
 
       const mimeType = contentType.split(";")[0].trim();
-      const dataUrl  = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      // Normalize icon mime types to image/png for consistency
+      const finalMime = (mimeType === "image/x-icon" || mimeType === "image/vnd.microsoft.icon")
+        ? "image/png"
+        : mimeType;
 
+      const dataUrl = `data:${finalMime};base64,${buffer.toString("base64")}`;
       memCache[clean] = dataUrl;
       saveToDB(clean, dataUrl);
       return dataUrl;
     } catch {
-      // Try next source
+      // try next source
     }
   }
 
-  // All sources failed
+  // All sources failed — cache null so we don't retry every time
   memCache[clean] = null;
   saveToDB(clean, null);
   return null;
 }
 
-// ── Batch fetch — get logos for multiple symbols ───────────────────
+// ── Batch fetch ───────────────────────────────────────────────────
 async function getLogosMap(symbols) {
   const result = {};
   await Promise.all(
     symbols.map(async sym => {
-      const clean = sym.replace(/\.(NS|BO|L|T|HK|AX)$/i,"").replace(/[^A-Z0-9]/gi,"").toUpperCase();
-      const url = await fetchLogoForSymbol(sym).catch(() => null);
+      const clean = sym.replace(/\.(NS|BO|L|T|HK|AX)$/i, "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+      const url   = await fetchLogoForSymbol(sym).catch(() => null);
       result[clean] = url;
-      result[sym]   = url; // also map original symbol
+      result[sym]   = url;
     })
   );
   return result;
 }
 
-// ── Single symbol ──────────────────────────────────────────────────
 async function getLogoUrl(symbol) {
   return fetchLogoForSymbol(symbol).catch(() => null);
 }
 
-// ── Warm logos for all tracked stocks on startup ───────────────────
+// ── Warm logos on startup ─────────────────────────────────────────
 function warmLogos() {
   setTimeout(async () => {
     ensureTable();
