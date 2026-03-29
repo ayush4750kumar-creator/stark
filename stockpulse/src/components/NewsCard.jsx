@@ -414,8 +414,8 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
         </div>
 
         {/* Sector/Market label — top-left below sentiment */}
-        <div style={{ position: "absolute", bottom: 10, left: 10, zIndex: 10 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12, color: "rgba(255,255,255,0.92)", letterSpacing: "0.06em", textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}>{label}</div>
+        <div style={{ position: "absolute", bottom: 10, left: 10, zIndex: 10, background: "rgba(0,0,0,0.55)", borderRadius: 8, padding: "4px 10px" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 12, color: "rgba(255,255,255,0.92)", letterSpacing: "0.06em" }}>{label}</div>
           {subLabel && subLabel !== label && (
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", fontFamily: "var(--font-display)" }}>{subLabel}</div>
           )}
@@ -474,10 +474,7 @@ export default function NewsCard({ news, index, onTrack, trackedSymbols = [], on
             border: `1px solid ${sentDir === "bullish" ? "rgba(74,222,128,0.22)" : sentDir === "bearish" ? "rgba(255,107,107,0.22)" : "var(--border)"}`,
             borderRadius: 8, padding: "7px 10px",
           }}>
-            <span style={{ fontSize: 14, flexShrink: 0 }}>
-              {sentDir === "bullish" ? "📈" : sentDir === "bearish" ? "📉" : "➡️"}
-            </span>
-            <span style={{
+<span style={{
               fontSize: 11, lineHeight: 1.6, fontFamily: "var(--font-body)",
               color: sentDir === "bullish" ? "var(--bull)" : sentDir === "bearish" ? "var(--bear)" : "var(--text3)",
             }}>
