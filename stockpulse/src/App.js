@@ -287,6 +287,129 @@ function AuthModal({ onLogin, onClose }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+// ── Mobile Profile Menu ───────────────────────────────────────────────────
+function MobileProfileMenu({ user, onLogout, GB, GB2, onSelectCategory }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const NAV_ITEMS = [
+    { label: "World Markets", icon: "🌍", sub: [
+      { label: "Trending Today", id: "trending" },
+      { label: "Top Gainers",    id: "gainers"  },
+      { label: "Top Losers",     id: "losers"   },
+      { label: "Indian Index",   id: "indices"  },
+      { label: "Gold",           id: "gold"     },
+      { label: "Silver",         id: "silver"   },
+      { label: "Top Indian Tech",id: "tech"     },
+      { label: "Oil",            id: "oil"      },
+      { label: "Finance / Banks",id: "finance"  },
+      { label: "US Market",      id: "us"       },
+    ]},
+    { label: "F&O Stocks",          icon: "📊", path: "/fo/stocks"         },
+    { label: "Commodities",         icon: "🪙", path: "/fo/commodities"    },
+    { label: "Intraday Screener",   icon: "⚡", path: "/screener/intraday" },
+    { label: "ETF Screener",        icon: "📈", path: "/screener/etf"      },
+    { label: "Indices Screener",    icon: "🗂", path: "/screener/indices"  },
+    { label: "Mutual Funds",        icon: "🔍", path: "/mf/screener"       },
+    { label: "Compare MFs",         icon: "⚖️", path: "/mf/compare"        },
+    { label: "IPO",                 icon: "🚀", path: "/more/ipo"          },
+    { label: "Global ETFs",         icon: "🌐", path: "/more/etfs"         },
+    { label: "Bonds",               icon: "📜", path: "/more/bonds"        },
+    { label: "Crypto",              icon: "₿",  path: "/more/crypto"       },
+  ];
+
+  const [marketsOpen, setMarketsOpen] = React.useState(false);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen(v => !v)}
+        style={{
+          width: 32, height: 32, borderRadius: 9,
+          background: `linear-gradient(135deg, ${GB}, ${GB2})`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "'Outfit', sans-serif", fontWeight: 800,
+          color: "#fff", fontSize: 12, flexShrink: 0, cursor: "pointer",
+        }}
+      >
+        {user.initials}
+      </div>
+
+      {open && (
+        <div style={{
+          position: "fixed", top: 60, right: 10, left: 10, zIndex: 9999,
+          background: "var(--bg)", border: "1px solid var(--border2)",
+          borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+          overflow: "hidden", maxHeight: "80vh", overflowY: "auto",
+        }}>
+          {/* User info */}
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)", background: "var(--bg2)" }}>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{user.name}</div>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 11, color: "var(--text3)", marginTop: 2 }}>{user.email}</div>
+          </div>
+
+          {/* World Markets expandable */}
+          <div
+            onClick={() => setMarketsOpen(v => !v)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--border)", cursor: "pointer", background: marketsOpen ? "var(--bg2)" : "transparent" }}
+          >
+            <span style={{ fontSize: 16 }}>🌍</span>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)", flex: 1 }}>World Markets</span>
+            <span style={{ fontSize: 11, color: "var(--text3)" }}>{marketsOpen ? "▲" : "▼"}</span>
+          </div>
+          {marketsOpen && NAV_ITEMS[0].sub.map(item => (
+            <div
+              key={item.id}
+              onClick={() => { onSelectCategory(item.id); setOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px 10px 36px", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: 12, color: "var(--text2)" }}>{item.label}</span>
+            </div>
+          ))}
+
+          {/* Other nav items */}
+          {NAV_ITEMS.slice(1).map(item => (
+            <div
+              key={item.label}
+              onClick={() => { if (window.__setOverlay) window.__setOverlay(item.path); setOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg2)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>{item.label}</span>
+            </div>
+          ))}
+
+          {/* Logout */}
+          <div
+            onClick={() => { onLogout(); setOpen(false); }}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", cursor: "pointer", color: "#e53e3e" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#fff5f5"}
+            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 700, fontSize: 13 }}>Logout</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Layout({ user, onLogin, onLogout }) {
   const [trackedStocks, setTrackedStocks] = useState([]);
   const [overlay, setOverlay]             = useState(null);
