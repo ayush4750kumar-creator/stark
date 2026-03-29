@@ -214,8 +214,15 @@ export default function FOStocksPage() {
     try { return JSON.parse(localStorage.getItem("fo_watchlist") || "[]"); } catch { return []; }
   });
   const [activeDash, setActiveDash] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
 
   const didFetch    = useRef(false);
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 900);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
   const searchRef   = useRef();
   const searchTimer = useRef();
 
